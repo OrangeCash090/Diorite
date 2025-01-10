@@ -9,6 +9,45 @@ const { Schematic } = require("prismarine-schematic");
 const j2b = JSON.parse(fs.readFileSync(require.resolve("./json/java-to-bedrock.json")));
 const blockMap = JSON.parse(fs.readFileSync(require.resolve("./json/items.json")));
 
+class CommandQueue {
+    constructor(limit, maxQueueSize) {
+        this.queue = [];
+        this.inFlight = 0;
+        this.limit = limit;
+        this.maxQueueSize = maxQueueSize; // Maximum number of queued commands
+    }
+
+    enqueue(fn) {
+        return new Promise((resolve, reject) => {
+            if (this.queue.length >= this.maxQueueSize) {
+                this.queue.shift(); // Drop the oldest command to make room
+            }
+    
+            this.queue.push({ fn, resolve, reject });
+            this.processQueue();
+        });
+    }    
+
+    async processQueue() {
+        if (this.inFlight >= this.limit || this.queue.length === 0) {
+            return; // Stop processing if limit is reached or queue is empty
+        }
+
+        const { fn, resolve, reject } = this.queue.shift();
+        this.inFlight++;
+
+        try {
+            const result = await fn();
+            resolve(result);
+        } catch (error) {
+            reject(error);
+        } finally {
+            this.inFlight--;
+            this.processQueue(); // Process next command
+        }
+    }
+}
+
 function rad(angle) {
     return angle * (Math.PI / 180);
 }
@@ -115,43 +154,51 @@ async function sendWithResponse(ws, data, reqID, cmd) {
 }
 
 function sendCommand(ws, cmd) {
-    ws.send(JSON.stringify({
-        header: {
-            version: 1,
-            requestId: uuid4(),
-            messageType: "commandRequest",
-            messagePurpose: "commandRequest"
-        },
-        body: {
-            version: 70,
-            commandLine: cmd,
-            origin: {
-                type: "server"
+    commandQueue.enqueue(() => {
+        ws.send(JSON.stringify({
+            header: {
+                version: 1,
+                requestId: uuid4(),
+                messageType: "commandRequest",
+                messagePurpose: "commandRequest"
+            },
+            body: {
+                version: 70,
+                commandLine: cmd,
+                origin: {
+                    type: "server"
+                }
             }
-        }
-    }))
+        }));
+
+        // Add a delay of 100 ms before resolving
+        return new Promise(resolve => setTimeout(resolve, 100));
+    }).catch(error => {
+        console.error("Failed to send command:", error.message);
+    });
 }
 
 async function commandWithResponse(ws, cmd) {
-    var reqID = uuid4();
-
-    var response = await sendWithResponse(ws, JSON.stringify({
-        header: {
-            version: 1,
-            requestId: reqID,
-            messageType: "commandRequest",
-            messagePurpose: "commandRequest"
-        },
-        body: {
-            version: 70,
-            commandLine: cmd,
-            origin: {
-                type: "server"
+    return ws.commandQueue.enqueue(async () => {
+        const reqID = uuid4();
+        const response = await sendWithResponse(ws, JSON.stringify({
+            header: {
+                version: 1,
+                requestId: reqID,
+                messageType: "commandRequest",
+                messagePurpose: "commandRequest"
+            },
+            body: {
+                version: 70,
+                commandLine: cmd,
+                origin: {
+                    type: "server"
+                }
             }
-        }
-    }), reqID, cmd)
+        }), reqID, cmd);
 
-    return new Response(response);
+        return new Response(response); // Return the required Response object
+    });
 }
 
 function sendSubscribe(ws, event) {
@@ -637,4 +684,4 @@ async function loadStructure(client, data, extension) {
     }
 }
 
-module.exports = { sendCommand, commandWithResponse, sendSubscribe, sayText, sendTitle, queryTarget, getPing, getBlock, getArea, raycastBlock, locateEntity, loadStructure }
+module.exports = { CommandQueue, sendCommand, commandWithResponse, sendSubscribe, sayText, sendTitle, queryTarget, getPing, getBlock, getArea, raycastBlock, locateEntity, loadStructure }

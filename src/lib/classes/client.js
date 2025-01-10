@@ -1,6 +1,5 @@
 const JSONSender = require("../utils/JSONSender");
 const EventEmitter = require("node:events");
-const fs = require("fs");
 
 const WorldHandler = require("./world");
 const CommandHandler = require("./command");
@@ -12,54 +11,6 @@ const { PlayerHandler, Player } = require("./player");
 /**
 * @typedef {import("../utils/response")} Response
 */
-
-class FunctionPack {
-    constructor(client, structure) {
-        this.client = client;
-        this.structure = structure;
-        this.tickedFunctions = this.structure["tick.json"] ? JSON.parse(this.structure["tick.json"]).values : [];
-    }
-
-    async runFunction(path, selector = "") {
-        var ping = await this.client.getPing();
-
-        return new Promise(async (resolve, reject) => {
-            var files = `${path}.mcfunction`.split("/");
-            var final = this.structure
-    
-            for (let i = 0; i < files.length; i++) {
-                final = final[files[i]];
-            }
-    
-            var lines = final.split("\r\n");
-
-            for (let i = 0; i < lines.length; i++) {
-                if (!lines[i].includes("#") && lines[i].length > 3) {
-                    if (lines[i].includes("run function ")) {
-                        var name = lines[i].split("run function ")[1];
-                        await this.runFunction(name, lines[i].split("function ")[0]);
-                    } else {
-                        this.client.runCommand(`${selector}${lines[i]}`);
-                    }
-                }
-
-                if (i % 98 == 0) {
-                    await new Promise(resolve => setTimeout(resolve, ping));
-                }
-            }
-
-            resolve();
-        })
-    }
-
-    async start() {
-        while (true) {
-            for (let i = 0; i < this.tickedFunctions.length; i++) {
-                await this.runFunction(this.tickedFunctions[i]);
-            }
-        }
-    }
-}
 
 /**
  * Represents a client connection.
@@ -79,6 +30,7 @@ class Client extends EventEmitter {
         /** @type {any} */
         this.server = server;
 
+        this.socket.commandQueue = new JSONSender.CommandQueue(100, 200);
         this.socket.responseResolvers = new Map();
 
         /** @type {WorldHandler} */
