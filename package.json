@@ -1,0 +1,15 @@
+{
+	"dependencies": {
+		"debug": "^4.3.7",
+		"fs": "^0.0.1-security",
+		"prismarine-nbt": "^2.6.0",
+		"prismarine-schematic": "^1.2.3",
+		"uuid4": "^2.0.3",
+		"vec3": "^0.1.10",
+		"ws": "^8.17.0"
+	},
+	"devDependencies": {
+		"@types/node": "^22.10.2",
+		"typescript": "^5.7.2"
+	}
+}
