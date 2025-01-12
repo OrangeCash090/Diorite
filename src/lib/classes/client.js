@@ -130,6 +130,16 @@ class Client extends EventEmitter {
         this.isHost = data.isHost;
         this.permission = data.permission;
         this.uuid = data.clientuuid;
+
+        this.runCommand(`/kill @e[name="__LOOKMARKER"]`);
+        this.runCommand("/summon bat __LOOKMARKER ~~~");
+        this.runCommand(`/effect @e[name="__LOOKMARKER"] invisibility infinite 255 true`);
+        this.runCommand(`/effect @e[name="__LOOKMARKER"] resistance infinite 255 true`);
+        await this.runCommand(`/effect @e[name="__LOOKMARKER"] fire_resistance infinite 255 true`);
+
+        setInterval(() => {
+            this.runCommand(`/execute as @s at @s anchored eyes run tp @e[name="__LOOKMARKER"] ^ ^ ^10`);
+        }, 20);
     }
 }
 

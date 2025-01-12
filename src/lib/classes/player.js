@@ -45,6 +45,11 @@ class Player {
         return (await JSONSender.queryTarget(this.client.socket, this.username))[round ? "roundedPosition" : "position"];
     }
 
+    async getYRotation() {
+        var data = (await JSONSender.queryTarget(this.client.socket, this.username))
+        return data.yRot;
+    }
+
     async getRotation() {
         var data = (await JSONSender.queryTarget(this.client.socket, this.username, true))
         return new Vec3(data.xRot, data.yRot, 0);

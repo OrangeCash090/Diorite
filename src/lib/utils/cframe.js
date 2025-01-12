@@ -304,7 +304,7 @@ function quaternionFromCFrame(cf) {
 }
 
 function lerp(a, b, t) {
-	var cf = a.inverse().multiplyNumber(b);
+	var cf = a.inverse().multiply(b);
 	var quat = quaternionFromCFrame(cf);
 
 	var w = quat[0];

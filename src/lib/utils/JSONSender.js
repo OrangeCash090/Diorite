@@ -254,16 +254,7 @@ async function queryTarget(ws, target, extra = false) {
         if (extra == true) {
             var tag = "__LOOKMARKER";
 
-            sendCommand(ws, `/execute as ${target} at @s anchored eyes run summon armor_stand ${tag} ^ ^ ^+5.00`);
-            sendCommand(ws, `/effect @e[name="${tag}"] invisibility 99999 255 true`);
-
-            var loop = setInterval(() => {
-                sendCommand(ws, `/execute as ${target} at @s anchored eyes run tp @e[name=${tag}] ^ ^ ^+5.00`);
-            }, 20);
-
             await queryTarget(ws, `@e[name="${tag}"]`).then(async (properties) => {
-                sendCommand(ws, `/kill @e[name="${tag}"]`);
-
                 if (properties.position != undefined) {
                     var otherPos = properties.position;
 
@@ -277,8 +268,6 @@ async function queryTarget(ws, target, extra = false) {
                     data.xRot = ((pitch * 180) / Math.PI)
                     data.lookVector = new Vec3(-(Math.cos(pitch) * Math.sin(rad(data.yRot))), Math.sin(pitch), Math.cos(pitch) * Math.cos(rad(data.yRot)));
                 }
-
-                clearInterval(loop);
             })
         }
     }

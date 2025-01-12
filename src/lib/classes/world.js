@@ -94,10 +94,10 @@ class WorldHandler {
     }
 
     /**
-    * Loads a structure from a file.
+    * Builds a structure from a file.
     * @param {string} path - The path to the file.
     */
-    async loadStructure(path) {
+    async buildStructure(path) {
         var extension = null;
 
         if (path.includes("schem") || path.includes("schematic")) {

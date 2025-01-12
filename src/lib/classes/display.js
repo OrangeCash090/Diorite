@@ -58,54 +58,41 @@ function catmullRomInterpolation(t, p0, p1, p2, p3) {
 }
 
 function convertKeyframes(frames) {
-    var result = {};
+    const result = {};
 
     for (let i = 0; i < frames.length; i++) {
-        var keyframe = frames[i];
-        var time = keyframe.tm;
+        const keyframe = frames[i];
+        const time = keyframe.tm;
 
         for (let [name, value] of Object.entries(keyframe)) {
             name = removeSpaces(name);
 
-            if (name != "tm") {
+            if (name !== "tm") {
                 if (result[name] == null) {
-                    result[name] = {
-                        position: {
-                            x: [],
-                            y: [],
-                            z: []
-                        },
-
-                        rotation: {
-                            x: [],
-                            y: [],
-                            z: []
-                        }
-                    }
+                    result[name] = [];
                 }
 
-                var cf = CFrame.new(value.cf[0], value.cf[1], value.cf[2], value.cf[3], value.cf[4], value.cf[5], value.cf[6], value.cf[7], value.cf[8], value.cf[9], value.cf[10], value.cf[11]);
-                var rotation = cf.toEulerAnglesXYZ();
+                // Assume value.cf contains a flat array for CFrame
+                const cf = CFrame.new(
+                    value.cf[0], value.cf[1], value.cf[2],
+                    value.cf[3], value.cf[4], value.cf[5],
+                    value.cf[6], value.cf[7], value.cf[8],
+                    value.cf[9], value.cf[10], value.cf[11]
+                );
 
-                result[name].position.x.push([time, cf.position.x]);
-                result[name].position.y.push([time, cf.position.y]);
-                result[name].position.z.push([time, cf.position.z]);
-
-                result[name].rotation.x.push([time, rotation.x]);
-                result[name].rotation.y.push([time, rotation.y]);
-                result[name].rotation.z.push([time, rotation.z]);
+                result[name].push([time, cf]);
             }
         }
     }
 
-    return result
+    return result;
 }
 
 function interpolateLinear(t, keyframes) {
     const numKeyframes = keyframes.length;
 
-    if (numKeyframes == 0) {
-        return 0;
+    if (numKeyframes === 0) {
+        return null;
     }
 
     for (let i = 0; i < numKeyframes - 1; i++) {
@@ -113,18 +100,18 @@ function interpolateLinear(t, keyframes) {
         const endTime = keyframes[i + 1][0];
 
         if (t >= startTime && t <= endTime) {
-            const p1 = keyframes[i][1];
-            const p2 = keyframes[i + 1][1];
+            const cf1 = keyframes[i][1];
+            const cf2 = keyframes[i + 1][1];
 
             // Calculate the interpolation factor
             const localT = (t - startTime) / (endTime - startTime);
 
-            // Perform linear interpolation between p1 and p2
-            return lerp(p1, p2, localT);
+            // Use CFrame.lerp to interpolate between cf1 and cf2
+            return cf1.lerp(cf2, localT);
         }
     }
 
-    // Return the last value if t is greater than the last keyframe time
+    // Return the last CFrame if t is greater than the last keyframe time
     return keyframes[numKeyframes - 1][1];
 }
 
@@ -144,8 +131,6 @@ function scaleIllusion(targetScale) {
             scale: new Vec3(targetScale.x, targetScale.z, targetScale.y),
             rotation: new Vec3(90, 0, 0)
         }
-    } else {
-        throw new Error(`WARNING!!! SCALE NOT POSSIBLE: ${targetScale}`);
     }
 }
 
@@ -178,16 +163,7 @@ class Animation {
                 }
 
                 for (let [name, bone] of Object.entries(this.keyframes)) {
-                    var boneCF = CFrame.new(
-                        interpolateLinear(this.currentTime, bone.position.x),
-                        interpolateLinear(this.currentTime, bone.position.y),
-                        interpolateLinear(this.currentTime, bone.position.z)
-                    ).multiply(CFrame.Angles(
-                        rad(interpolateLinear(this.currentTime, bone.rotation.x)),
-                        rad(interpolateLinear(this.currentTime, bone.rotation.y)),
-                        rad(interpolateLinear(this.currentTime, bone.rotation.z))
-                    ))
-
+                    const boneCF = interpolateLinear(this.currentTime, bone);
                     this.object.setWeldCFrame(name, boneCF);
                 }
 
@@ -284,14 +260,18 @@ class DisplayModel {
     /**
      * Creates a DisplayModel instance.
      * @param {WebSocket} ws - The WebSocket for communication.
-     * @param {Vec3} [origin=new Vec3(0,0,0)] - The origin of the model.
+     * @param {Vec3} origin - The origin of the model.
+     * @param {string} attachedTo - If the model is attached to an entity.
      */
-    constructor(ws, origin) {
+    constructor(ws, origin, attachedTo) {
         /** @type {WebSocket} */
         this.ws = ws;
 
         /** @type {Vec3} */
         this.origin = origin;
+
+        /** @type {string} */
+        this.attachedTo = attachedTo;
 
         /** @type {Object.<string, DisplayBlock>} */
         this.blocks = {};
@@ -425,10 +405,6 @@ class DisplayModel {
 
             this.createWeld(this.getBlock(removeSpaces(welds[i].part0)), this.getBlock(removeSpaces(welds[i].part1)), CFrame.new(c0[0], c0[1], c0[2], c0[3], c0[4], c0[5], c0[6], c0[7], c0[8], c0[9], c0[10], c0[11]), CFrame.new(c1[0], c1[1], c1[2], c1[3], c1[4], c1[5], c1[6], c1[7], c1[8], c1[9], c1[10], c1[11]), removeSpaces(welds[i].name));
         }
-
-        if (root != undefined) {
-            this.root = root;
-        }
     }
 
     /**
@@ -542,7 +518,12 @@ class DisplayModel {
             this.rootCommand = `v.tick=${globalTick};`;
         }
 
-        JSONSender.sendCommand(this.ws, `/tp @e[type=fox,tag=!dead] ${this.origin.x} ${this.origin.y} ${this.origin.z}`);
+        if (this.attachedTo) {
+            JSONSender.sendCommand(this.ws, `/execute as @e[name=${this.attachedTo}] at @s run tp @e[type=fox,tag=!dead] ~${this.origin.x} ~${this.origin.y} ~${this.origin.z}`);
+        } else {
+            JSONSender.sendCommand(this.ws, `/tp @e[type=fox,tag=!dead] ${this.origin.x} ${this.origin.y} ${this.origin.z}`);
+        }
+
         JSONSender.sendCommand(this.ws, `/stopsound @a mob.fox.ambient`);
         globalTick++;
 
@@ -568,11 +549,12 @@ class DisplayHandler {
 
     /**
      * Creates a new DisplayModel.
-     * @param {CFrame} [origin=CFrame.new(0,0,0)] - The origin of the model.
+     * @param {Vec3} origin - The origin of the model.
+     * @param {string} attachedTo - If the model is attached to an entity.
      * @returns {DisplayModel} The created model.
      */
-    createModel(origin = CFrame.new(0, 0, 0)) {
-        return new DisplayModel(this.client.socket, origin);
+    createModel(origin, attachedTo) {
+        return new DisplayModel(this.client.socket, origin, attachedTo);
     }
 }
 
