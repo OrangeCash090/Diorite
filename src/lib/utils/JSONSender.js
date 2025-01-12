@@ -254,7 +254,17 @@ async function queryTarget(ws, target, extra = false) {
         if (extra == true) {
             var tag = "__LOOKMARKER";
 
-            await queryTarget(ws, `@e[name="${tag}"]`).then(async (properties) => {
+            sendCommand(ws, `/execute as ${target} anchored eyes run summon armor_stand ${tag} ^ ^ ^20`);
+            sendCommand(ws, `/effect @e[name="${tag}"] invisibility 99999 255 true`);
+
+            var loop = setInterval(() => {
+                sendCommand(ws, `/execute as ${target} anchored eyes run summon armor_stand ${tag} ^ ^ ^20`);
+            }, 20);
+
+            await queryTarget(ws, `@e[name="${tag}",c=1]`).then(async (properties) => {
+                sendCommand(ws, `/kill @e[name="${tag}"]`);
+                clearInterval(loop);
+
                 if (properties.position != undefined) {
                     var otherPos = properties.position;
 

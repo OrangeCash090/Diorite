@@ -39,9 +39,7 @@ class EventHandler {
 
                 if (parsedMsg.header.eventName == "PlayerMessage" && parsedMsg.body.sender != "External") {
                     this.client.emit("chatMessage", parsedMsg.body.sender, parsedMsg.body.message);
-                }
-
-                if (parsedMsg.header.eventName == "ItemInteracted") {
+                } else if (parsedMsg.header.eventName == "ItemInteracted") {
                     this.client.emit("itemInteracted", parsedMsg.body.item.id, parsedMsg.body.item.enchantments);
 
                     this.lastInteract = Date.now();
