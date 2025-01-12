@@ -18,11 +18,6 @@ class BedrockSocket extends EventEmitter {
             const newClient = new Client(conn, this.websocket);
 
             newClient._setup().then(() => {
-                /**
-                 * Emitted when a new client connects and is fully set up.
-                 * @event BedrockSocket#connect
-                 * @param {Client} client - The connected client instance.
-                 */
                 this.emit("connect", newClient);
             });
 

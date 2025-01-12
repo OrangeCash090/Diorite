@@ -154,7 +154,7 @@ async function sendWithResponse(ws, data, reqID, cmd) {
 }
 
 function sendCommand(ws, cmd) {
-    commandQueue.enqueue(() => {
+    ws.commandQueue.enqueue(() => {
         ws.send(JSON.stringify({
             header: {
                 version: 1,
@@ -484,7 +484,8 @@ async function loadStructure(client, data, extension) {
 
         async function processChunks(chunks) {
             for (const chunk of Object.values(chunks)) {
-                await commandWithResponse(client, `/execute positioned ${startPos.x} ${startPos.y} ${startPos.z} run tp @s ~${chunk[0].position.x} ~${chunk[0].position.y} ~${chunk[0].position.z}`);
+                await commandWithResponse(client, `/tickingarea remove area`);
+                sendCommand(client, `/execute positioned ${startPos.x} ${startPos.y} ${startPos.z} run tickingarea add circle ~${chunk[0].position.x} ~${chunk[0].position.y} ~${chunk[0].position.z} 3 area`);
                 await placeBlocksBatch(chunk);
             }
         }
@@ -568,10 +569,11 @@ async function loadStructure(client, data, extension) {
         }
 
         if (extension == "mcstructure") {
+            var chunks = {};
             var blocks = [];
             var counter = 0;
 
-            nbt.parse(data, function (error, data) {
+            nbt.parse(data, async function (error, data) {
                 if (error) throw error;
 
                 var size = new Vec3(data.value.size.value.value[0], data.value.size.value.value[1], data.value.size.value.value[2]);
@@ -672,13 +674,27 @@ async function loadStructure(client, data, extension) {
                                 blockStates = "[]"
                             }
 
-                            blocks.push({ name: blockName + blockStates, position: new Vec3(x, y, z), extraCMDS: blockCommands });
+                            if (blockName != "minecraft:air") {
+                                blocks.push({ name: blockName + blockStates, position: new Vec3(x, y, z), extraCMDS: blockCommands });
+                            }
+
                             counter += 1;
                         }
                     }
                 }
 
-                placeBlocksBatch(blocks);
+                blocks.forEach(block => {
+                    var chunkX = Math.floor(block.position.x / 16);
+                    var chunkZ = Math.floor(block.position.z / 16);
+                    var chunkKey = `${chunkX},${chunkZ}`;
+
+                    if (!chunks[chunkKey]) {
+                        chunks[chunkKey] = [];
+                    }
+                    chunks[chunkKey].push(block);
+                });
+
+                await processChunks(chunks);
             })
         }
     }

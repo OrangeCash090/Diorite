@@ -9,13 +9,21 @@ const DisplayHandler = require("./display");
 const { PlayerHandler, Player } = require("./player");
 
 /**
-* @typedef {import("../utils/response")} Response
-*/
+ * @typedef {import("../utils/response")} Response
+ */
+
+/**
+ * @typedef {Object} ClientEvents
+ * @property {[sender: string, message: string]} chatMessage - Fired when a chat message is received. Arguments: sender, message.
+ * @property {[name: string, enchants: Object]} itemInteracted - Fired when an item is interacted with. Arguments: item, enchants
+ * @property {[name: string, enchants: Object]} mouseDown - Fired when right click is pressed. Arguments: item, enchants
+ * @property {[]} mouseUp - Fired when right click is released.
+ */
 
 /**
  * Represents a client connection.
- * @extends EventEmitter
-*/
+ * @extends {EventEmitter}
+ */
 class Client extends EventEmitter {
     /**
      * @param {any} socket - The WebSocket instance.
@@ -62,6 +70,21 @@ class Client extends EventEmitter {
 
         /** @type {null | string} */
         this.uuid = null;
+    }
+
+    /**
+     * Registers an event listener.
+     * @template {keyof ClientEvents} K
+     * @param {K} event - The event name.
+     * @param {(...args: ClientEvents[K]) => void} listener - The callback function for the event.
+     * 
+     * @example
+     * client.on('chatMessage', (sender, message) => {
+     *     console.log(`${sender}: ${message}`);
+     * });
+     */
+    on(event, listener) {
+        return super.on(event, listener);
     }
 
     /**

@@ -23,7 +23,7 @@ class EventHandler {
 
             try {
                 var parsedMsg = JSON.parse(msg);
-
+                
                 var reqID = parsedMsg.header.requestId;
                 var resolver = this.client.socket.responseResolvers.get(reqID);
 
