@@ -2,7 +2,8 @@ const { register } = require("../utils/commandList");
 const JSONSender = require("../utils/JSONSender");
 
 register("test", {}, async (client, args) => {
-    while (true) {
-        console.log(await client.localPlayer.getRotation());
-    }
+    client.on("mouseDown", async () => {
+        var ray = await client.localPlayer.raycast();
+        client.World.setBlock(ray.position, "gold_block");
+    })
 })

@@ -333,7 +333,7 @@ async function raycastBlock(ws, origin, direction, range = 5) {
     return new Promise(async (resolve, reject) => {
         var blocks = [];
 
-        for (let i = 0; i <= range; i+=0.1) {
+        for (let i = 0; i <= range; i+=0.2) {
             var pos = new Vec3(origin.x + (direction.x * (i)), origin.y + (direction.y * (i)), origin.z + (direction.z * (i)));
 
             blocks.push({
@@ -348,7 +348,7 @@ async function raycastBlock(ws, origin, direction, range = 5) {
             }
         }
 
-        resolve({name: "air", position: new Vec3(0, 0, 69420)});
+        resolve({});
     });
 }
 
