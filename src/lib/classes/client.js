@@ -8,6 +8,10 @@ const GUIHandler = require("./graphics");
 const DisplayHandler = require("./display");
 const { PlayerHandler, Player } = require("./player");
 
+const CFrame = require("../utils/cframe");
+const { Vec3 } = require("vec3");
+const { randomInteger } = require("../utils/math");
+
 /**
  * @typedef {import("../utils/response")} Response
  */
@@ -58,6 +62,17 @@ class Client extends EventEmitter {
 
         /** @type {DisplayHandler} */
         this.DisplayBlock = new DisplayHandler(this);
+
+        /**
+         * @property {Object} CFrame - A reference to the CFrame type.
+         * @property {Vec3} Vec3 - A reference to the Vec3 type.
+         * @property {function(...args: any): number} randomInt - A function that generates random integers.
+        */
+        this.Utils = {
+            CFrame: CFrame,
+            Vec3: Vec3,
+            randomInt: randomInteger
+        }
 
         /** @type {null | Player} */
         this.localPlayer = null;

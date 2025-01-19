@@ -228,7 +228,7 @@ class DisplayBlock {
         /** @type {string} */
         this.block = block;
 
-        /** @type {CFrame} */
+        /** @type {Object} */
         this.cframe = CFrame.new(0, 0, 0);
 
         /** @type {Vec3} */

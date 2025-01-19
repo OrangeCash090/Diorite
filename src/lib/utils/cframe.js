@@ -1,9 +1,10 @@
-// @ts-nocheck
 const { Vec3 } = require("vec3");
 var cframe = {};
 
 var max = Math.max;
+// @ts-ignore
 var cos = Math.cos;
+// @ts-ignore
 var sin = Math.sin;
 var acos = Math.acos;
 var asin = Math.asin;
@@ -21,12 +22,13 @@ var m42 = 0;
 var m43 = 0;
 var m44 = 1;
 
+// @ts-ignore
 function rad(angle) {
-    return angle * (Math.PI / 180);
+	return angle * (Math.PI / 180);
 }
 
 function deg(angle) {
-    return angle * (180 / Math.PI);
+	return angle * (180 / Math.PI);
 }
 
 function vec3Lerp(v1, v2, t) {
@@ -34,36 +36,36 @@ function vec3Lerp(v1, v2, t) {
 }
 
 function fromAxisAngle(axis, vector, theta) {
-    axis = axis.unit();
+	axis = axis.unit();
 
-    const part1 = vector.scaled(Math.cos(theta));
-    const part2 = axis.scaled(vector.dot(axis) * (1 - Math.cos(theta)));
-    const part3 = axis.cross(vector).scaled(Math.sin(theta));
+	const part1 = vector.scaled(Math.cos(theta));
+	const part2 = axis.scaled(vector.dot(axis) * (1 - Math.cos(theta)));
+	const part3 = axis.cross(vector).scaled(Math.sin(theta));
 
-    return part1.plus(part2).plus(part3);
+	return part1.plus(part2).plus(part3);
 }
 
 function cfTimesv3(cf, v3) {
-    // Extract the components from the cf matrix
-    const components = cf.components();
+	// Extract the components from the cf matrix
+	const components = cf.components();
 
-    // Extract the rotation matrix elements
-    const m11 = components[3], m12 = components[4], m13 = components[5];
-    const m21 = components[6], m22 = components[7], m23 = components[8];
-    const m31 = components[9], m32 = components[10], m33 = components[11];
+	// Extract the rotation matrix elements
+	const m11 = components[3], m12 = components[4], m13 = components[5];
+	const m21 = components[6], m22 = components[7], m23 = components[8];
+	const m31 = components[9], m32 = components[10], m33 = components[11];
 
-    // Create Vec3 vectors for the matrix's right, top, and back directions
-    const right = new Vec3(m11, m21, m31);
-    const top = new Vec3(m12, m22, m32);
-    const back = new Vec3(m13, m23, m33);
+	// Create Vec3 vectors for the matrix's right, top, and back directions
+	const right = new Vec3(m11, m21, m31);
+	const top = new Vec3(m12, m22, m32);
+	const back = new Vec3(m13, m23, m33);
 
-    // Calculate the transformed position
-    const transformed = cf.p
-        .plus(right.scaled(v3.x))
-        .plus(top.scaled(v3.y))
-        .plus(back.scaled(v3.z));
+	// Calculate the transformed position
+	const transformed = cf.p
+		.plus(right.scaled(v3.x))
+		.plus(top.scaled(v3.y))
+		.plus(back.scaled(v3.z));
 
-    return transformed;
+	return transformed;
 }
 
 function fourByfour(a, b) {
@@ -101,22 +103,22 @@ function fourByfour(a, b) {
 	var b43 = b[14];
 	var b44 = b[15];
 
-	var m11 = a11*b11 + a12*b21 + a13*b31 + a14*b41;
-	var m12 = a11*b12 + a12*b22 + a13*b32 + a14*b42;
-	var m13 = a11*b13 + a12*b23 + a13*b33 + a14*b43;
-	var m14 = a11*b14 + a12*b24 + a13*b34 + a14*b44;
-	var m21 = a21*b11 + a22*b21 + a23*b31 + a24*b41;
-	var m22 = a21*b12 + a22*b22 + a23*b32 + a24*b42;
-	var m23 = a21*b13 + a22*b23 + a23*b33 + a24*b43;
-	var m24 = a21*b14 + a22*b24 + a23*b34 + a24*b44;
-	var m31 = a31*b11 + a32*b21 + a33*b31 + a34*b41;
-	var m32 = a31*b12 + a32*b22 + a33*b32 + a34*b42;
-	var m33 = a31*b13 + a32*b23 + a33*b33 + a34*b43;
-	var m34 = a31*b14 + a32*b24 + a33*b34 + a34*b44;
-	var m41 = a41*b11 + a42*b21 + a43*b31 + a44*b41;
-	var m42 = a41*b12 + a42*b22 + a43*b32 + a44*b42;
-	var m43 = a41*b13 + a42*b23 + a43*b33 + a44*b43;
-	var m44 = a41*b14 + a42*b24 + a43*b34 + a44*b44;
+	var m11 = a11 * b11 + a12 * b21 + a13 * b31 + a14 * b41;
+	var m12 = a11 * b12 + a12 * b22 + a13 * b32 + a14 * b42;
+	var m13 = a11 * b13 + a12 * b23 + a13 * b33 + a14 * b43;
+	var m14 = a11 * b14 + a12 * b24 + a13 * b34 + a14 * b44;
+	var m21 = a21 * b11 + a22 * b21 + a23 * b31 + a24 * b41;
+	var m22 = a21 * b12 + a22 * b22 + a23 * b32 + a24 * b42;
+	var m23 = a21 * b13 + a22 * b23 + a23 * b33 + a24 * b43;
+	var m24 = a21 * b14 + a22 * b24 + a23 * b34 + a24 * b44;
+	var m31 = a31 * b11 + a32 * b21 + a33 * b31 + a34 * b41;
+	var m32 = a31 * b12 + a32 * b22 + a33 * b32 + a34 * b42;
+	var m33 = a31 * b13 + a32 * b23 + a33 * b33 + a34 * b43;
+	var m34 = a31 * b14 + a32 * b24 + a33 * b34 + a34 * b44;
+	var m41 = a41 * b11 + a42 * b21 + a43 * b31 + a44 * b41;
+	var m42 = a41 * b12 + a42 * b22 + a43 * b32 + a44 * b42;
+	var m43 = a41 * b13 + a42 * b23 + a43 * b33 + a44 * b43;
+	var m44 = a41 * b14 + a42 * b24 + a43 * b34 + a44 * b44;
 
 	return [m11, m12, m13, m14, m21, m22, m23, m24, m31, m32, m33, m34, m41, m42, m43, m44];
 }
@@ -197,14 +199,14 @@ function getDeterminant(cf) {
 	var a32 = componentsA[10];
 	var a33 = componentsA[11];
 
-	var det = a11*a22*a33*m44 + a11*a23*a34*m42 + a11*a24*a32*m43
-	+ a12*a21*a34*m43 + a12*a23*a31*m44 + a12*a24*a33*m41
-	+ a13*a21*a32*m44 + a13*a22*a34*m41 + a13*a24*a31*m42
-	+ a14*a21*a33*m42 + a14*a22*a31*m43 + a14*a23*a32*m41
-	- a11*a22*a34*m43 - a11*a23*a32*m44 - a11*a24*a33*m42
-	- a12*a21*a33*m44 - a12*a23*a34*m41 - a12*a24*a31*m43
-	- a13*a21*a34*m42 - a13*a22*a31*m44 - a13*a24*a32*m41
-	- a14*a21*a32*m43 - a14*a22*a33*m41 - a14*a23*a31*m42;
+	var det = a11 * a22 * a33 * m44 + a11 * a23 * a34 * m42 + a11 * a24 * a32 * m43
+		+ a12 * a21 * a34 * m43 + a12 * a23 * a31 * m44 + a12 * a24 * a33 * m41
+		+ a13 * a21 * a32 * m44 + a13 * a22 * a34 * m41 + a13 * a24 * a31 * m42
+		+ a14 * a21 * a33 * m42 + a14 * a22 * a31 * m43 + a14 * a23 * a32 * m41
+		- a11 * a22 * a34 * m43 - a11 * a23 * a32 * m44 - a11 * a24 * a33 * m42
+		- a12 * a21 * a33 * m44 - a12 * a23 * a34 * m41 - a12 * a24 * a31 * m43
+		- a13 * a21 * a34 * m42 - a13 * a22 * a31 * m44 - a13 * a24 * a32 * m41
+		- a14 * a21 * a32 * m43 - a14 * a22 * a33 * m41 - a14 * a23 * a31 * m42;
 
 	return det;
 }
@@ -228,36 +230,40 @@ function invert4x4(cf) {
 	var det = getDeterminant(cf);
 	if (det == 0) return cf;
 
-	var b11 = (a22*a33*m44 + a23*a34*m42 + a24*a32*m43 - a22*a34*m43 - a23*a32*m44 - a24*a33*m42) / det;
-	var b12 = (a12*a34*m43 + a13*a32*m44 + a14*a33*m42 - a12*a33*m44 - a13*a34*m42 - a14*a32*m43) / det;
-	var b13 = (a12*a23*m44 + a13*a24*m42 + a14*a22*m43 - a12*a24*m43 - a13*a22*m44 - a14*a23*m42) / det;
-	var b14 = (a12*a24*a33 + a13*a22*a34 + a14*a23*a32 - a12*a23*a34 - a13*a24*a32 - a14*a22*a33) / det;
-	var b21 = (a21*a34*m43 + a23*a31*m44 + a24*a33*m41 - a21*a33*m44 - a23*a34*m41 - a24*a31*m43) / det;
-	var b22 = (a11*a33*m44 + a13*a34*m41 + a14*a31*m43 - a11*a34*m43 - a13*a31*m44 - a14*a33*m41) / det;
-	var b23 = (a11*a24*m43 + a13*a21*m44 + a14*a23*m41 - a11*a23*m44 - a13*a24*m41 - a14*a21*m43) / det;
-	var b24 = (a11*a23*a34 + a13*a24*a31 + a14*a21*a33 - a11*a24*a33 - a13*a21*a34 - a14*a23*a31) / det;
-	var b31 = (a21*a32*m44 + a22*a34*m41 + a24*a31*m42 - a21*a34*m42 - a22*a31*m44 - a24*a32*m41) / det;
-	var b32 = (a11*a34*m42 + a12*a31*m44 + a14*a32*m41 - a11*a32*m44 - a12*a34*m41 - a14*a31*m42) / det;
-	var b33 = (a11*a22*m44 + a12*a24*m41 + a14*a21*m42 - a11*a24*m42 - a12*a21*m44 - a14*a22*m41) / det;
-	var b34 = (a11*a24*a32 + a12*a21*a34 + a14*a22*a31 - a11*a22*a34 - a12*a24*a31 - a14*a21*a32) / det;
-	var b41 = (a21*a33*m42 + a22*a31*m43 + a23*a32*m41 - a21*a32*m43 - a22*a33*m41 - a23*a31*m42) / det;
-	var b42 = (a11*a32*m43 + a12*a33*m41 + a13*a31*m42 - a11*a33*m42 - a12*a31*m43 - a13*a32*m41) / det;
-	var b43 = (a11*a23*m42 + a12*a21*m43 + a13*a22*m41 - a11*a22*m43 - a12*a23*m41 - a13*a21*m42) / det;
-	var b44 = (a11*a22*a33 + a12*a23*a31 + a13*a21*a32 - a11*a23*a32 - a12*a21*a33 - a13*a22*a31) / det;
+	var b11 = (a22 * a33 * m44 + a23 * a34 * m42 + a24 * a32 * m43 - a22 * a34 * m43 - a23 * a32 * m44 - a24 * a33 * m42) / det;
+	var b12 = (a12 * a34 * m43 + a13 * a32 * m44 + a14 * a33 * m42 - a12 * a33 * m44 - a13 * a34 * m42 - a14 * a32 * m43) / det;
+	var b13 = (a12 * a23 * m44 + a13 * a24 * m42 + a14 * a22 * m43 - a12 * a24 * m43 - a13 * a22 * m44 - a14 * a23 * m42) / det;
+	var b14 = (a12 * a24 * a33 + a13 * a22 * a34 + a14 * a23 * a32 - a12 * a23 * a34 - a13 * a24 * a32 - a14 * a22 * a33) / det;
+	var b21 = (a21 * a34 * m43 + a23 * a31 * m44 + a24 * a33 * m41 - a21 * a33 * m44 - a23 * a34 * m41 - a24 * a31 * m43) / det;
+	var b22 = (a11 * a33 * m44 + a13 * a34 * m41 + a14 * a31 * m43 - a11 * a34 * m43 - a13 * a31 * m44 - a14 * a33 * m41) / det;
+	var b23 = (a11 * a24 * m43 + a13 * a21 * m44 + a14 * a23 * m41 - a11 * a23 * m44 - a13 * a24 * m41 - a14 * a21 * m43) / det;
+	var b24 = (a11 * a23 * a34 + a13 * a24 * a31 + a14 * a21 * a33 - a11 * a24 * a33 - a13 * a21 * a34 - a14 * a23 * a31) / det;
+	var b31 = (a21 * a32 * m44 + a22 * a34 * m41 + a24 * a31 * m42 - a21 * a34 * m42 - a22 * a31 * m44 - a24 * a32 * m41) / det;
+	var b32 = (a11 * a34 * m42 + a12 * a31 * m44 + a14 * a32 * m41 - a11 * a32 * m44 - a12 * a34 * m41 - a14 * a31 * m42) / det;
+	var b33 = (a11 * a22 * m44 + a12 * a24 * m41 + a14 * a21 * m42 - a11 * a24 * m42 - a12 * a21 * m44 - a14 * a22 * m41) / det;
+	var b34 = (a11 * a24 * a32 + a12 * a21 * a34 + a14 * a22 * a31 - a11 * a22 * a34 - a12 * a24 * a31 - a14 * a21 * a32) / det;
+	// @ts-ignore
+	var b41 = (a21 * a33 * m42 + a22 * a31 * m43 + a23 * a32 * m41 - a21 * a32 * m43 - a22 * a33 * m41 - a23 * a31 * m42) / det;
+	// @ts-ignore
+	var b42 = (a11 * a32 * m43 + a12 * a33 * m41 + a13 * a31 * m42 - a11 * a33 * m42 - a12 * a31 * m43 - a13 * a32 * m41) / det;
+	// @ts-ignore
+	var b43 = (a11 * a23 * m42 + a12 * a21 * m43 + a13 * a22 * m41 - a11 * a22 * m43 - a12 * a23 * m41 - a13 * a21 * m42) / det;
+	// @ts-ignore
+	var b44 = (a11 * a22 * a33 + a12 * a23 * a31 + a13 * a21 * a32 - a11 * a23 * a32 - a12 * a21 * a33 - a13 * a22 * a31) / det;
 
 	return cframe.new(b14, b24, b34, b11, b12, b13, b21, b22, b23, b31, b32, b33);
 }
 
 function quaternionToMatrix(i, j, k, w) {
-	var m11 = 1 - 2*j^2 - 2*k^2;
-	var m12 = 2*(i*j - k*w);
-	var m13 = 2*(i*k + j*w);
-	var m21 = 2*(i*j + k*w);
-	var m22 = 1 - 2*i^2 - 2*k^2;
-	var m23 = 2*(j*k - i*w);
-	var m31 = 2*(i*k - j*w);
-	var m32 = 2*(j*k + i*w);
-	var m33 = 1 - 2*i^2 - 2*j^2;
+	var m11 = 1 - 2 * j ^ 2 - 2 * k ^ 2;
+	var m12 = 2 * (i * j - k * w);
+	var m13 = 2 * (i * k + j * w);
+	var m21 = 2 * (i * j + k * w);
+	var m22 = 1 - 2 * i ^ 2 - 2 * k ^ 2;
+	var m23 = 2 * (j * k - i * w);
+	var m31 = 2 * (i * k - j * w);
+	var m32 = 2 * (j * k + i * w);
+	var m33 = 1 - 2 * i ^ 2 - 2 * j ^ 2;
 
 	return [0, 0, 0, m11, m12, m13, m21, m22, m23, m31, m32, m33];
 }
@@ -265,8 +271,11 @@ function quaternionToMatrix(i, j, k, w) {
 function quaternionFromCFrame(cf) {
 	var components = cf.components();
 
+	// @ts-ignore
 	var mx = components[0];
+	// @ts-ignore
 	var my = components[1];
+	// @ts-ignore
 	var mz = components[2];
 	var m11 = components[3];
 	var m12 = components[4];
@@ -310,10 +319,12 @@ function lerp(a, b, t) {
 	var w = quat[0];
 	var v = quat[1];
 
+	// @ts-ignore
 	var theta = acos(w) * 2;
 	var p = vec3Lerp(a.p, b.p, t);
 
 	if (theta != 0) {
+		// @ts-ignore
 		var rot = a.multiply(cframe.fromAxisAngle(v, theta * t));
 		var components = rot.components();
 
@@ -349,11 +360,33 @@ function lerp(a, b, t) {
 	}
 }
 
+/**
+ * Represents a 3D coordinate frame with position and rotation.
+ */
 class CFrame {
+	/**
+	 * Creates a new CFrame.
+	 * @param {number} x - The x-coordinate of the position.
+	 * @param {number} y - The y-coordinate of the position.
+	 * @param {number} z - The z-coordinate of the position.
+	 * @param {number} m11 - Matrix value at row 1, column 1.
+	 * @param {number} m12 - Matrix value at row 1, column 2.
+	 * @param {number} m13 - Matrix value at row 1, column 3.
+	 * @param {number} m21 - Matrix value at row 2, column 1.
+	 * @param {number} m22 - Matrix value at row 2, column 2.
+	 * @param {number} m23 - Matrix value at row 2, column 3.
+	 * @param {number} m31 - Matrix value at row 3, column 1.
+	 * @param {number} m32 - Matrix value at row 3, column 2.
+	 * @param {number} m33 - Matrix value at row 3, column 3.
+	 */
 	constructor(x, y, z, m11, m12, m13, m21, m22, m23, m31, m32, m33) {
+		/** @type {Vec3} */
 		this.p = new Vec3(x, y, z);
+		/** @type {Vec3} */
 		this.position = new Vec3(x, y, z);
-		this.rotation = new Vec3(0,0,0);
+		/** @type {Vec3} */
+		this.rotation = new Vec3(0, 0, 0);
+		/** @type {Vec3} */
 		this.lookVector = new Vec3(-m13, -m23, -m33);
 
 		this.m11 = m11;
@@ -369,58 +402,126 @@ class CFrame {
 		this.m33 = m33;
 	}
 
+	/**
+	 * Returns the components of the CFrame.
+	 * @returns {number[]} An array of components [x, y, z, m11, m12, ..., m33].
+	 */
 	components() {
 		return [this.p.x, this.p.y, this.p.z, this.m11, this.m12, this.m13, this.m21, this.m22, this.m23, this.m31, this.m32, this.m33];
 	}
 
+	/**
+	 * Adds a Vec3 to the position.
+	 * @param {Vec3} b - The Vec3 to add.
+	 * @returns {CFrame} A new CFrame with the updated position.
+	 */
 	addVec3(b) {
 		return cframe.new(this.p.x + b.x, this.p.y + b.y, this.p.z + b.z, this.m11, this.m12, this.m13, this.m21, this.m22, this.m23, this.m31, this.m32, this.m33);
 	}
 
+	/**
+	 * Subtracts a Vec3 from the position.
+	 * @param {Vec3} b - The Vec3 to subtract.
+	 * @returns {CFrame} A new CFrame with the updated position.
+	 */
 	subVec3(b) {
 		return cframe.new(this.p.x - b.x, this.p.y - b.y, this.p.z - b.z, this.m11, this.m12, this.m13, this.m21, this.m22, this.m23, this.m31, this.m32, this.m33);
 	}
 
+	/**
+	 * Multiplies this CFrame with another CFrame.
+	 * @param {CFrame} b - The other CFrame.
+	 * @returns {CFrame} The resulting CFrame.
+	 */
 	multiply(b) {
 		return cfTimescf(this, b);
 	}
 
+	/**
+	 * Multiplies this CFrame with a Vec3.
+	 * @param {Vec3} b - The Vec3.
+	 * @returns {Vec3} The resulting Vec3.
+	 */
 	multiplyVec3(b) {
 		return cfTimesv3(this, b);
 	}
 
+	/**
+	 * Returns the inverse of this CFrame.
+	 * @returns {CFrame} The inverse CFrame.
+	 */
 	inverse() {
 		return invert4x4(this);
 	}
 
+	/**
+	 * Linearly interpolates between this CFrame and another.
+	 * @param {CFrame} cf - The target CFrame.
+	 * @param {number} t - The interpolation factor (0 to 1).
+	 * @returns {CFrame} The interpolated CFrame.
+	 */
 	lerp(cf, t) {
 		return lerp(this, cf, t);
 	}
 
+	/**
+	 * Converts this CFrame to world space relative to another.
+	 * @param {CFrame} cf - The other CFrame.
+	 * @returns {CFrame} The resulting CFrame in world space.
+	 */
 	toWorldSpace(cf) {
 		return this.multiply(cf);
 	}
 
+	/**
+	 * Converts this CFrame to object space relative to another.
+	 * @param {CFrame} cf - The other CFrame.
+	 * @returns {CFrame} The resulting CFrame in object space.
+	 */
 	toObjectSpace(cf) {
-		return this.inverse().multiply(cf)
+		return this.inverse().multiply(cf);
 	}
 
+	/**
+	 * Converts a point to world space.
+	 * @param {Vec3} v - The point in object space.
+	 * @returns {Vec3} The point in world space.
+	 */
 	pointToWorldSpace(v) {
 		return this.multiplyVec3(v);
 	}
 
+	/**
+	 * Converts a point to object space.
+	 * @param {Vec3} v - The point in world space.
+	 * @returns {Vec3} The point in object space.
+	 */
 	pointToObjectSpace(v) {
-		return this.inverse().multiplyVec3(v)
+		return this.inverse().multiplyVec3(v);
 	}
 
+	/**
+	 * Converts a vector to world space.
+	 * @param {Vec3} v - The vector in object space.
+	 * @returns {Vec3} The vector in world space.
+	 */
 	vectorToWorldSpace(v) {
 		return this.subVec3(this.p).multiplyVec3(v);
 	}
 
+	/**
+	 * Converts a vector to object space.
+	 * @param {Vec3} v - The vector in world space.
+	 * @returns {Vec3} The vector in object space.
+	 */
 	vectorToObjectSpace(v) {
 		return this.subVec3(this.p).inverse().multiplyVec3(v);
 	}
 
+	/**
+	 * Converts this CFrame to Euler angles (XYZ convention).
+	 * @returns {Vec3} The Euler angles in degrees.
+	 */
 	toEulerAnglesXYZ() {
 		var components = this.components();
 
@@ -432,7 +533,9 @@ class CFrame {
 		var m22 = components[7];
 		var m23 = components[8];
 
+		// @ts-ignore
 		var m31 = components[9];
+		// @ts-ignore
 		var m32 = components[10];
 		var m33 = components[11];
 
@@ -459,6 +562,10 @@ class CFrame {
 		return new Vec3(deg(xAngle), deg(yAngle), deg(zAngle));
 	}
 
+	/**
+	 * Converts this CFrame to Euler angles (YXZ convention).
+	 * @returns {Vec3} The Euler angles in degrees.
+	 */
 	toEulerAnglesYXZ() {
 		var components = this.components();
 
@@ -470,7 +577,9 @@ class CFrame {
 		var m22 = components[7];
 		var m23 = components[8];
 
+		// @ts-ignore
 		var m31 = components[9];
+		// @ts-ignore
 		var m32 = components[10];
 		var m33 = components[11];
 
@@ -497,6 +606,10 @@ class CFrame {
 		return new Vec3(deg(xAngle), deg(yAngle), deg(zAngle));
 	}
 
+	/**
+	 * Converts this CFrame to Euler angles (ZYX convention).
+	 * @returns {Vec3} The Euler angles in degrees.
+	 */
 	toEulerAnglesZYX() {
 		var components = this.components();
 
@@ -505,7 +618,9 @@ class CFrame {
 		var m13 = components[5];
 
 		var m21 = components[6];
+		// @ts-ignore
 		var m22 = components[7];
+		// @ts-ignore
 		var m23 = components[8];
 
 		var m31 = components[9];
@@ -527,7 +642,7 @@ class CFrame {
 				xAngle = 0;
 			}
 		} else {
-			zAngle = atan2( -m12, -m13);
+			zAngle = atan2(-m12, -m13);
 			yAngle = -(Math.PI / 2);
 			xAngle = 0;
 		}
@@ -535,15 +650,65 @@ class CFrame {
 		return new Vec3(deg(xAngle), deg(yAngle), deg(zAngle));
 	}
 
+	/**
+	 * Returns a string representation of this CFrame.
+	 * @returns {string} A string containing all components.
+	 */
 	toString() {
 		return this.components().toString();
 	}
 
+	/**
+	 * Clones this CFrame.
+	 * @returns {CFrame} A new CFrame with the same components.
+	 */
 	clone() {
 		return cframe.new(this.p.x, this.p.y, this.p.z, this.m11, this.m12, this.m13, this.m21, this.m22, this.m23, this.m31, this.m32, this.m33);
 	}
 }
 
+/**
+ * Creates a new CFrame instance using various initialization options.
+ *
+ * This factory function provides multiple ways to create a `CFrame`:
+ * 1. Position only (`x`, `y`, `z`).
+ * 2. Position and rotation matrix (`x`, `y`, `z`, and 9 matrix elements).
+ * 3. Position and quaternion (`x`, `y`, `z`, and quaternion components).
+ * 4. Using a `Vec3` for position or `lookAt` behavior with an eye and look vector.
+ *
+ * @function cframe.new
+ * @param {number|Vec3} x - The x-coordinate of the position, or a Vec3 for position.
+ * @param {number|Vec3|null} y - The y-coordinate of the position, or a Vec3 for lookAt.
+ * @param {number|null} z - The z-coordinate of the position.
+ * @param {number|null} [m11] - Matrix or quaternion component.
+ * @param {number|null} [m12] - Matrix or quaternion component.
+ * @param {number|null} [m13] - Matrix or quaternion component.
+ * @param {number|null} [m21] - Matrix or quaternion component.
+ * @param {number|null} [m22] - Matrix or quaternion component.
+ * @param {number|null} [m23] - Matrix or quaternion component.
+ * @param {number|null} [m31] - Matrix component.
+ * @param {number|null} [m32] - Matrix component.
+ * @param {number|null} [m33] - Matrix component.
+ * @returns {CFrame} The newly created CFrame.
+ *
+ * @example
+ * // Example 1: Create a CFrame with position only
+ * const cf1 = cframe.new(10, 20, 30);
+ *
+ * @example
+ * // Example 2: Create a CFrame with position and rotation matrix
+ * const cf2 = cframe.new(10, 20, 30, 1, 0, 0, 0, 1, 0, 0, 0, 1);
+ *
+ * @example
+ * // Example 3: Create a CFrame with position and quaternion
+ * const cf3 = cframe.new(10, 20, 30, 0, 0, 0, 1);
+ *
+ * @example
+ * // Example 4: Create a CFrame using lookAt behavior
+ * const eye = new Vec3(0, 0, 0);
+ * const look = new Vec3(1, 0, 0);
+ * const cf4 = cframe.new(eye, look);
+ */
 cframe.new = (x, y, z, m11, m12, m13, m21, m22, m23, m31, m32, m33) => {
 	var cf = new CFrame(0, 0, 0, identityMatrix.m11, identityMatrix.m12, identityMatrix.m13, identityMatrix.m21, identityMatrix.m22, identityMatrix.m23, identityMatrix.m31, identityMatrix.m32, identityMatrix.m33);
 
@@ -605,7 +770,9 @@ cframe.new = (x, y, z, m11, m12, m13, m21, m22, m23, m31, m32, m33) => {
 		cf.m32 = m[10];
 		cf.m33 = m[11];
 	} else {
+		// @ts-ignore
 		cf.p = new Vec3(x, y, z);
+		// @ts-ignore
 		cf.position = new Vec3(x, y, z);
 
 		cf.m11 = m11;
@@ -627,7 +794,21 @@ cframe.new = (x, y, z, m11, m12, m13, m21, m22, m23, m31, m32, m33) => {
 	return cf;
 }
 
+/**
+ * Creates a CFrame from an axis and angle of rotation.
+ *
+ * @function cframe.fromAxisAngle
+ * @param {Vec3} axis - The axis of rotation (unit vector).
+ * @param {number} theta - The angle of rotation in radians.
+ * @returns {CFrame} The resulting CFrame.
+ *
+ * @example
+ * const axis = new Vec3(1, 0, 0);
+ * const angle = Math.PI / 4; // 45 degrees
+ * const cf = cframe.fromAxisAngle(axis, angle);
+ */
 cframe.fromAxisAngle = (axis, theta) => {
+	// @ts-ignore
 	var axis = new Vec3(axis.x, axis.y, axis.z).unit();
 	var r = fromAxisAngle(axis, new Vec3(1, 0, 0), theta);
 	var t = fromAxisAngle(axis, new Vec3(0, 1, 0), theta);
@@ -641,6 +822,18 @@ cframe.fromAxisAngle = (axis, theta) => {
 	);
 }
 
+/**
+ * Creates a CFrame from individual rotation angles (XYZ order).
+ *
+ * @function cframe.Angles
+ * @param {number} x - Rotation around the X-axis in radians.
+ * @param {number} y - Rotation around the Y-axis in radians.
+ * @param {number} z - Rotation around the Z-axis in radians.
+ * @returns {CFrame} The resulting CFrame.
+ *
+ * @example
+ * const cf = cframe.Angles(Math.PI / 4, Math.PI / 6, Math.PI / 8);
+ */
 cframe.Angles = (x, y, z) => {
 	var cfx = cframe.fromAxisAngle(new Vec3(1, 0, 0), x);
 	var cfy = cframe.fromAxisAngle(new Vec3(0, 1, 0), y);
@@ -649,14 +842,50 @@ cframe.Angles = (x, y, z) => {
 	return cfx.multiply(cfy).multiply(cfz);
 }
 
+/**
+ * Creates a CFrame from individual rotation angles (XYZ order).
+ *
+ * @function cframe.fromEulerAngles
+ * @param {number} x - Rotation around the X-axis in radians.
+ * @param {number} y - Rotation around the Y-axis in radians.
+ * @param {number} z - Rotation around the Z-axis in radians.
+ * @returns {CFrame} The resulting CFrame.
+ *
+ * @example
+ * const cf = cframe.fromEulerAngles(Math.PI / 4, Math.PI / 6, Math.PI / 8);
+ */
 cframe.fromEulerAngles = (x, y, z) => {
 	return cframe.Angles(x, y, z)
 }
 
+/**
+ * Creates a CFrame using Euler angles in the specified order.
+ *
+ * @function cframe.fromEulerAnglesXYZ
+ * @param {number} x - Rotation around the X-axis in radians.
+ * @param {number} y - Rotation around the Y-axis in radians.
+ * @param {number} z - Rotation around the Z-axis in radians.
+ * @returns {CFrame} The resulting CFrame.
+ *
+ * @example
+ * const cf = cframe.fromEulerAnglesXYZ(Math.PI / 4, Math.PI / 6, Math.PI / 8);
+ */
 cframe.fromEulerAnglesXYZ = (x, y, z) => {
 	return cframe.Angles(x, y, z)
 }
 
+/**
+ * Creates a CFrame using Euler angles in YXZ order.
+ *
+ * @function cframe.fromEulerAnglesYXZ
+ * @param {number} x - Rotation around the X-axis in radians.
+ * @param {number} y - Rotation around the Y-axis in radians.
+ * @param {number} z - Rotation around the Z-axis in radians.
+ * @returns {CFrame} The resulting CFrame.
+ *
+ * @example
+ * const cf = cframe.fromEulerAnglesYXZ(Math.PI / 4, Math.PI / 6, Math.PI / 8);
+ */
 cframe.fromEulerAnglesYXZ = (x, y, z) => {
 	var cfx = cframe.fromAxisAngle(new Vec3(1, 0, 0), x);
 	var cfy = cframe.fromAxisAngle(new Vec3(0, 1, 0), y);
@@ -665,6 +894,18 @@ cframe.fromEulerAnglesYXZ = (x, y, z) => {
 	return cfy.multiply(cfx).multiply(cfz);
 }
 
+/**
+ * Creates a CFrame using Euler angles in ZYX order.
+ *
+ * @function cframe.fromEulerAnglesZYX
+ * @param {number} x - Rotation around the X-axis in radians.
+ * @param {number} y - Rotation around the Y-axis in radians.
+ * @param {number} z - Rotation around the Z-axis in radians.
+ * @returns {CFrame} The resulting CFrame.
+ *
+ * @example
+ * const cf = cframe.fromEulerAnglesZYX(Math.PI / 4, Math.PI / 6, Math.PI / 8);
+ */
 cframe.fromEulerAnglesZYX = (x, y, z) => {
 	var cfx = cframe.fromAxisAngle(new Vec3(1, 0, 0), x);
 	var cfy = cframe.fromAxisAngle(new Vec3(0, 1, 0), y);
@@ -673,7 +914,21 @@ cframe.fromEulerAnglesZYX = (x, y, z) => {
 	return cfz.multiply(cfy).multiply(cfx);
 }
 
+/**
+ * Creates a CFrame using the eye (position) and lookAt (target) vectors.
+ *
+ * @function cframe.lookAt
+ * @param {Vec3} eye - The position of the camera or object.
+ * @param {Vec3} look - The target position to look at.
+ * @returns {CFrame} The resulting CFrame.
+ *
+ * @example
+ * const eye = new Vec3(0, 5, 10);
+ * const target = new Vec3(0, 0, 0);
+ * const cf = cframe.lookAt(eye, target);
+ */
 cframe.lookAt = (eye, look) => {
+	// @ts-ignore
 	return cframe.new(eye, look);
 }
 

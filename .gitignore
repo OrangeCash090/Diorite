@@ -1,6 +1,7 @@
 # Ignore the node_modules directory
 node_modules/
 storage/
+.vscode/
 
 # Ignore main.js file
 main.js

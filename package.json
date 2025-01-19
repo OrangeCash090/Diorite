@@ -1,4 +1,10 @@
 {
+	"name": "bedrock-socket",
+    "author": {
+        "name": "OrangeCash090",
+        "url": "https://google.com"
+    },
+	"main": "index.js",
 	"dependencies": {
 		"debug": "^4.3.7",
 		"fs": "^0.0.1-security",

@@ -31,17 +31,17 @@ class CommandHandler {
         /** @type {string} */
         this.prefix = "!";
 
-        this.client.on("chatMessage", (/** @type {string} */ sender, /** @type {string} */ message) => {
+        this.client.on("chatMessage", (sender, message) => {
             if (this.enabled) {
                 var msgArgs = message.split(" ");
-    
+
                 if (message.includes(`'`)) {
                     msgArgs[1] = message.slice(getPosition(message, `'`, 1), getPosition(message, `'`, 2) + 1);
                 }
-    
+
                 if (sender == this.client.localPlayer.username) {
                     var cmdName = msgArgs[0].substring(1, msgArgs[0].length).toLowerCase();
-    
+
                     if (msgArgs[0].substring(0, 1) == this.prefix) {
                         this.callCommand(cmdName, msgArgs.splice(1, msgArgs.length));
                     }
@@ -51,11 +51,11 @@ class CommandHandler {
     }
 
     /**
-    * Creates a new command.
-    * @param {string} name - The name of the command.
-    * @param {object} meta - Metadata for the command.
-    * @param {Function} cb - The function the command executes.
-    */
+     * Registers a new command.
+     * @param {string} name - The name of the command.
+     * @param {object} meta - The command's metadata.
+     * @param {(client: Client, args: any[]) => void} cb - The function the command executes. 
+     */
     addCommand(name, meta, cb) {
         this.commands[name] = {
             meta: meta,
