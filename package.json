@@ -1,9 +1,14 @@
 {
 	"name": "bedrock-socket",
+	"version": "1.0.1",
+	"description": "A websocket API for Minecraft Bedrock Edition designed for easy use and enabling complex projects.",
     "author": {
-        "name": "OrangeCash090",
-        "url": "https://google.com"
+        "name": "OrangeCash090"
     },
+	"repository": {
+		"type": "git",
+		"url": "git://github.com/OrangeCash090/bedrock-socket.git"
+	},
 	"main": "index.js",
 	"dependencies": {
 		"debug": "^4.3.7",
