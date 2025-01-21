@@ -1,2 +1,2 @@
-const BedrockSocket = require("./src/server");
-module.exports = BedrockSocket
+const Diorite = require("./src/server");
+module.exports = Diorite

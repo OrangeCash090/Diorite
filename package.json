@@ -2,9 +2,9 @@
 	"name": "diorite",
 	"version": "1.0.0",
 	"description": "A websocket API for Minecraft Bedrock Edition designed for easy use and enabling complex projects.",
-    "author": {
-        "name": "OrangeCash090"
-    },
+	"author": {
+		"name": "OrangeCash090"
+	},
 	"repository": {
 		"type": "git",
 		"url": "git://github.com/OrangeCash090/Diorite.git"
@@ -21,6 +21,6 @@
 	},
 	"devDependencies": {
 		"@types/node": "^22.10.2",
-		"typescript": "^5.7.2"
+		"typescript": "^5.7.3"
 	}
 }
