@@ -1,15 +1,8 @@
-const fs = require("fs");
 var commandList = {};
 
 /**
 * @typedef {import("../classes/client")} Client
 */
-
-fs.readdir("./src/lib/commands", (err, files) => {
-    for (let i = 0; i < files.length; i++) {
-        require(`../commands/${files[i]}`);
-    }
-})
 
 /**
  * Registers a new command.

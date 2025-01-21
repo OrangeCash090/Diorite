@@ -11,6 +11,9 @@ function getPosition(string, subString, index) {
 * @typedef {import("./client")} Client
 */
 
+require("../commands/ping");
+require("../commands/freecam");
+
 /**
  * A class that runs custom commands.
  */

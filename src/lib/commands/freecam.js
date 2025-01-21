@@ -1,6 +1,4 @@
-const { Vec3 } = require("vec3");
 const { register } = require("../utils/commandList");
-const JSONSender = require("../utils/JSONSender");
 
 register("freecam", {}, async (client, args) => {
     var moving = false;
