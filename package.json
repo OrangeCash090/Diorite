@@ -1,6 +1,6 @@
 {
 	"name": "bedrock-socket",
-	"version": "1.0.1",
+	"version": "1.0.0",
 	"description": "A websocket API for Minecraft Bedrock Edition designed for easy use and enabling complex projects.",
     "author": {
         "name": "OrangeCash090"
