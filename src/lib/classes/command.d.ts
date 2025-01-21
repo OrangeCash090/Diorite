@@ -35,4 +35,4 @@ declare class CommandHandler {
 declare namespace CommandHandler {
     export { Client };
 }
-type Client = import("../client");
+type Client = import("./client");

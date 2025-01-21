@@ -18,4 +18,4 @@ declare class EventHandler {
 declare namespace EventHandler {
     export { Client };
 }
-type Client = import("../client");
+type Client = import("./client");

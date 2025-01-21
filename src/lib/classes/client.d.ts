@@ -92,17 +92,17 @@ declare namespace Client {
     export { Response, ClientEvents };
 }
 import EventEmitter = require("events");
-import WorldHandler = require("../world");
-import CommandHandler = require("../command");
-import EventHandler = require("../event");
-import { PlayerHandler } from "../player";
-import GUIHandler = require("../graphics");
-import DisplayHandler = require("../display");
-import CFrame = require("../../utils/cframe");
+import WorldHandler = require("./world");
+import CommandHandler = require("./command");
+import EventHandler = require("./event");
+import { PlayerHandler } from "./player";
+import GUIHandler = require("./graphics");
+import DisplayHandler = require("./display");
+import CFrame = require("../utils/cframe");
 import { Vec3 } from "vec3";
-import { randomInteger } from "../../utils/math";
-import { Player } from "../player";
-type Response = import("../../utils/response");
+import { randomInteger } from "../utils/math";
+import { Player } from "./player";
+type Response = import("../utils/response");
 type ClientEvents = {
     /**
      * - Fired when a chat message is received. Arguments: sender, message.
