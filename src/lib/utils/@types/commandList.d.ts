@@ -1,4 +1,4 @@
-export type Client = import("../classes/client");
+export type Client = import("../../classes/client");
 /**
  * Registers a new command.
  * @param {string} name - The name of the command.

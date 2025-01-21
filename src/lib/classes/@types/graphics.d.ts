@@ -95,7 +95,7 @@ declare class Page {
      */
     update(): void;
 }
-type Client = import("./client");
+type Client = import("../client");
 /**
 * @typedef {import("./client")} Client
 */

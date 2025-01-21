@@ -127,7 +127,7 @@ declare class DisplayModel {
      */
     update(): Promise<void>;
 }
-type Client = import("./client");
+type Client = import("../client");
 /**
  * Represents a block to be displayed in the 3D world.
  */

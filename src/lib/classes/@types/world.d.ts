@@ -47,4 +47,4 @@ declare namespace WorldHandler {
     export { Client };
 }
 import { Vec3 } from "vec3";
-type Client = import("./client");
+type Client = import("../client");

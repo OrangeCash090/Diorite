@@ -1,4 +1,4 @@
-export type Client = import("./client");
+export type Client = import("../client");
 /**
  * A class for interacting with players in a Minecraft world.
  */
