@@ -1,6 +1,6 @@
 {
 	"name": "diorite",
-	"version": "1.0.0",
+	"version": "1.0.1npm",
 	"description": "A websocket API for Minecraft Bedrock Edition designed for easy use and enabling complex projects.",
 	"author": {
 		"name": "OrangeCash090"
