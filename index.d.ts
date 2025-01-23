@@ -1,5 +1,5 @@
-import Socket = require("./src/server");
-import Client = require("./src/lib/classes/client");
+import EventEmitter from "events";
+import Client from "./src/lib/classes/client";
 
 // BedrockSocket class declaration
 export class Socket extends EventEmitter {
