@@ -5,4 +5,4 @@ storage/
 
 # Ignore main.js file
 main.js
-tsconfig.json
+package-lock.json
