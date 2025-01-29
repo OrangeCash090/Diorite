@@ -40,11 +40,6 @@ declare class Client extends EventEmitter<[never]> {
      * @property {Vec3} Vec3 - A reference to the Vec3 type.
      * @property {function(...args: any): number} randomInt - A function that generates random integers.
     */
-    Utils: {
-        CFrame: typeof CFrame;
-        Vec3: typeof Vec3;
-        randomInt: typeof randomInteger;
-    };
     /** @type {null | Player} */
     localPlayer: null | Player;
     /** @type {boolean} */
@@ -98,9 +93,6 @@ import EventHandler = require("./event");
 import { PlayerHandler } from "./player";
 import GUIHandler = require("./graphics");
 import DisplayHandler = require("./display");
-import CFrame = require("../utils/cframe");
-import { Vec3 } from "vec3";
-import { randomInteger } from "../utils/math";
 import { Player } from "./player";
 type Response = import("../utils/response");
 type ClientEvents = {
