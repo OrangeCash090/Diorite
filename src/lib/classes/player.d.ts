@@ -44,7 +44,7 @@ export class Player {
         rotation: Vec3;
         lookVector: any;
     }>;
-    raycast(range: any): Promise<any>;
+    raycast(range: any, precision?: number): Promise<any>;
     isInArea(min: any, max: any): Promise<boolean>;
     getScores(): Promise<{}>;
     hasTag(tag: any): Promise<boolean>;

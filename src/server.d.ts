@@ -3,7 +3,7 @@ export = BedrockSocket;
  * Represents a WebSocket Server.
  * @extends EventEmitter
  */
-declare class BedrockSocket extends EventEmitter<[never]> {
+declare class BedrockSocket {
     /**
      * @param {number} port - The port the WebSocket server runs on.
      */
@@ -16,5 +16,4 @@ declare class BedrockSocket extends EventEmitter<[never]> {
      */
     on(event: "connect", listener: (client: Client) => void): this;
 }
-import EventEmitter = require("events");
 import Client = require("./lib/classes/client");

@@ -1,5 +1,8 @@
 export type Client = import("../classes/client");
 /**
+* @typedef {import("../classes/client")} Client
+*/
+/**
  * Registers a new command.
  * @param {string} name - The name of the command.
  * @param {object} meta - The command's metadata.

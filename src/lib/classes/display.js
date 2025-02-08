@@ -4,6 +4,7 @@ const JSONSender = require("../utils/JSONSender");
 const CFrame = require("../utils/cframe");
 const { Vec3 } = require("vec3");
 const fs = require("fs");
+const { randomInteger } = require("../utils/math");
 
 /**
 * @typedef {import("./client")} Client
@@ -16,7 +17,7 @@ function removeSpaces(str) {
 }
 
 function trunc3(x) {
-	return Number(x.toFixed(3));
+    return Number(x.toFixed(3));
 }
 
 function rad(angle) {
@@ -116,21 +117,47 @@ function interpolateLinear(t, keyframes) {
 }
 
 function scaleIllusion(targetScale) {
-    if (targetScale.x == targetScale.z) {
+    let { x, y, z } = targetScale;
+
+    // Measure absolute differences
+    let dx = Math.abs(x - y);
+    let dy = Math.abs(y - z);
+    let dz = Math.abs(x - z);
+
+    // Find the smallest difference
+    if (dx <= dy && dx <= dz) {
+        // x and y are closest
+        let avg = (x + y) / 2;
+        x = y = avg;
+    } else if (dy <= dx && dy <= dz) {
+        // y and z are closest
+        let avg = (y + z) / 2;
+        y = z = avg;
+    } else {
+        // x and z are closest
+        let avg = (x + z) / 2;
+        x = z = avg;
+    }
+
+    // Ensure at least two values are the same, otherwise return null
+    if (x !== z && x !== y && y !== z) return null;
+
+    // Return corrected scale and transformation
+    if (x === z) {
         return {
-            scale: new Vec3(targetScale.x, targetScale.y, targetScale.z),
+            scale: new Vec3(x, y, z),
             rotation: new Vec3(0, 0, 0)
-        }
-    } else if (targetScale.y == targetScale.z) {
+        };
+    } else if (y === z) {
         return {
-            scale: new Vec3(targetScale.y, targetScale.x, targetScale.z),
+            scale: new Vec3(y, x, z),
             rotation: new Vec3(0, 0, 90)
-        }
-    } else if (targetScale.x == targetScale.y) {
+        };
+    } else if (x === y) {
         return {
-            scale: new Vec3(targetScale.x, targetScale.z, targetScale.y),
+            scale: new Vec3(x, z, y),
             rotation: new Vec3(90, 0, 0)
-        }
+        };
     }
 }
 
@@ -214,11 +241,15 @@ class Weld {
 class DisplayBlock {
     /**
      * Creates a DisplayBlock instance.
+     * @param {WebSocket} ws - The websocket client.
      * @param {string} name - The name of the block.
      * @param {string} block - The type of block (e.g., "stone", "air").
      * @param {Vec3} size - The size of the block.
      */
-    constructor(name, block, size) {
+    constructor(ws, name, block, size) {
+        /** @type {WebSocket} */
+        this.ws = ws;
+
         /** @type {string} */
         this.name = name;
 
@@ -233,6 +264,9 @@ class DisplayBlock {
 
         /** @type {Vec3} */
         this.rotOffset = new Vec3(0, 0, 0);
+
+        /** @type {string} */
+        this.modelId = "";
 
         /**
          * Variables used for position and rotation.
@@ -251,6 +285,15 @@ class DisplayBlock {
             ],
         };
     }
+
+    /**
+     * Sets the displayed block.
+     * @param {string} name - The name of the minecraft block.
+     */
+    switchBlock(name) {
+        this.block = name;
+        JSONSender.sendCommand(this.ws, `/replaceitem entity @e[type=fox,name=${this.name},tag=${this.modelId}] slot.weapon.mainhand 0 ${name}`);
+    }
 }
 
 /**
@@ -260,10 +303,11 @@ class DisplayModel {
     /**
      * Creates a DisplayModel instance.
      * @param {WebSocket} ws - The WebSocket for communication.
+     * @param {string} name - The name of the model.
      * @param {Vec3} origin - The origin of the model.
      * @param {string} attachedTo - If the model is attached to an entity.
      */
-    constructor(ws, origin, attachedTo) {
+    constructor(ws, name, origin, attachedTo) {
         /** @type {WebSocket} */
         this.ws = ws;
 
@@ -279,16 +323,15 @@ class DisplayModel {
         /** @type {Object.<string, Weld>} */
         this.welds = {};
 
-        /** @type {Object.<string, Object>} */
-        this.physicsBinds = {};
+        /** @type {string} */
+        this.root = "root" + randomInteger(0, 500);
 
         /** @type {string} */
-        this.root = "root";
+        this.id = name || "model" + randomInteger(0, 100);
 
         /** @type {string} */
         this.rootCommand = `v.tick=0;`;
-
-        this.createBlock("root", "air");
+        this.createBlock(this.root, "air");
     }
 
     /**
@@ -300,14 +343,15 @@ class DisplayModel {
      */
     createBlock(name, block = "stone", size = new Vec3(1, 1, 1)) {
         if (this.blocks[name] != undefined) {
-            name = `Part${Object.keys(this.blocks).length}`;
+            name = `P${Object.keys(this.blocks).length}`;
         }
 
-        var newDisplay = new DisplayBlock(name, block, size);
+        var newDisplay = new DisplayBlock(this.ws, name, block, size);
         var adjustments = scaleIllusion(size);
 
         newDisplay.size = adjustments.scale;
         newDisplay.rotOffset = adjustments.rotation;
+        newDisplay.modelId = this.id;
 
         this.blocks[name] = newDisplay;
         return newDisplay;
@@ -375,10 +419,6 @@ class DisplayModel {
         this.origin = pos;
     }
 
-    bindPhysicsTo(block, phys) {
-        this.physicsBinds[block.name] = phys;
-    }
-
     /**
      * Loads a model from a Roblox JSON file.
      * @param {string} path - The file path to the JSON.
@@ -405,6 +445,12 @@ class DisplayModel {
 
             this.createWeld(this.getBlock(removeSpaces(welds[i].part0)), this.getBlock(removeSpaces(welds[i].part1)), CFrame.new(c0[0], c0[1], c0[2], c0[3], c0[4], c0[5], c0[6], c0[7], c0[8], c0[9], c0[10], c0[11]), CFrame.new(c1[0], c1[1], c1[2], c1[3], c1[4], c1[5], c1[6], c1[7], c1[8], c1[9], c1[10], c1[11]), removeSpaces(welds[i].name));
         }
+
+        if (root != null) {
+            delete this.blocks[this.root];
+            JSONSender.sendCommand(this.ws, `/kill @e[type=fox,name=${this.root},tag=${this.id}]`);
+            this.root = root;
+        }
     }
 
     /**
@@ -424,11 +470,20 @@ class DisplayModel {
     }
 
     /**
+     * Aligns the model with the position of an entity
+     * @param {string} entity - The name of the entity
+     */
+    alignTo(entity) {
+        JSONSender.sendCommand(this.ws, `/execute as @e[name=${entity}] at @s rotated as @s run tp @e[type=fox,tag=!dead,tag=${this.id}] ~${this.origin.x} ~${this.origin.y} ~${this.origin.z} ~ ~`);
+    }
+
+    /**
      * Spawns the model in the world.
      */
     async spawn() {
         for (let block of Object.values(this.blocks)) {
-            JSONSender.sendCommand(this.ws, `/summon fox ${block.name} ${this.origin.x} ${this.origin.y} ${this.origin.z}`);
+            JSONSender.sendCommand(this.ws, `/summon fox ~~~ ~ ~ minecraft:ageable_grow_up ${block.name}`);
+            JSONSender.sendCommand(this.ws, `/tag @e[type=fox,name=${block.name}] add ${this.id}`);
         }
 
         await new Promise(resolve => setTimeout(resolve, 100));
@@ -442,67 +497,74 @@ class DisplayModel {
                 }
             }
 
-            await JSONSender.commandWithResponse(this.ws, `/playanimation @e[type=fox,name=${this.root}] animation.player.attack.positions none 0 "${this.rootCommand}" rootset${i}`);
+            await JSONSender.commandWithResponse(this.ws, `/playanimation @e[type=fox,name=${this.root},tag=${this.id}] animation.player.attack.positions none 0 "${this.rootCommand}" rootset${i}`);
             this.rootCommand = `v.tick=0;`;
         }
 
         await new Promise(resolve => setTimeout(resolve, 100));
 
         for (let block of Object.values(this.blocks)) {
-            JSONSender.sendCommand(this.ws, `/replaceitem entity @e[type=fox,name=${block.name}] slot.weapon.mainhand 0 ${block.block}`);
+            JSONSender.sendCommand(this.ws, `/replaceitem entity @e[type=fox,name=${block.name},tag=${this.id}] slot.weapon.mainhand 0 ${block.block}`);
         }
 
         await new Promise(resolve => setTimeout(resolve, 100));
 
         for (let block of Object.values(this.blocks)) {
-            JSONSender.sendCommand(this.ws, `/playanimation @e[type=fox,name=${block.name}] animation.player.attack.positions none 0 "v.scale=1;v.xzscale=${block.size.x};v.yscale=${block.size.y};v.xpos=${block.variables.position[0]}*16;v.ypos=${block.variables.position[1]}*16;v.zpos=${block.variables.position[2]}*16;v.xrot=${block.variables.rotation[0]};v.yrot=${block.variables.rotation[1]};v.zrot=${block.variables.rotation[2]};" tempset`);
+            JSONSender.sendCommand(this.ws, `/playanimation @e[type=fox,name=${block.name},tag=${this.id}] animation.player.attack.positions none 0 "v.scale=1;v.xzscale=${block.size.x};v.yscale=${block.size.y};v.xpos=${block.variables.position[0]}*16;v.ypos=${block.variables.position[1]}*16;v.zpos=${block.variables.position[2]}*16;v.xrot=${block.variables.rotation[0]};v.yrot=${block.variables.rotation[1]};v.zrot=${block.variables.rotation[2]};" tempset`);
         }
 
         await new Promise(resolve => setTimeout(resolve, 100));
 
-        await JSONSender.commandWithResponse(this.ws, `/event entity @e[type=fox] minecraft:ageable_grow_up`);
-        await JSONSender.commandWithResponse(this.ws, `/effect @e[type=fox] instant_health 9999999 255 true`);
-        await JSONSender.commandWithResponse(this.ws, `/effect @e[type=fox] invisibility 9999999 255 true`);
-        await JSONSender.commandWithResponse(this.ws, `/playanimation @e[type=fox] animation.player.sleeping none 0 "" controller.animation.fox.move`);
-        await JSONSender.commandWithResponse(this.ws, `/playanimation @e[type=fox] animation.creeper.swelling none 0 "v.xbasepos=v.xbasepos??0;v.ybasepos=v.ybasepos??0;v.zbasepos=v.zbasepos??0;v.xpos=v.xpos??0;v.ypos=v.ypos??0;v.zpos=v.zpos??0;v.xrot=v.xrot??0;v.yrot=v.yrot??0;v.zrot=v.zrot??0;v.scale=v.scale??1;v.xzscale=v.xzscale??1;v.yscale=v.yscale??1;v.swelling_scale1=2.1385*math.sqrt(v.xzscale)*math.sqrt(v.scale);v.swelling_scale2=2.1385*math.sqrt(v.yscale)*math.sqrt(v.scale);" scale`);
-        await JSONSender.commandWithResponse(this.ws, `/playanimation @e[type=fox] animation.ender_dragon.neck_head_movement none 0 "v.head_rotation_x=0;v.head_rotation_y=0;v.head_rotation_z=0;v.head_position_x=(v.xbasepos*3741/8000)*math.sqrt(v.xzscale)*math.sqrt(v.scale);v.head_position_y=(10.6925+v.ybasepos*3741/8000)*math.sqrt(v.yscale)*math.sqrt(v.scale);v.head_position_z=(17.108-v.zbasepos*3741/8000)*math.sqrt(v.xzscale)*math.sqrt(v.scale);" posshift`);
-        await JSONSender.commandWithResponse(this.ws, `/playanimation @e[type=fox] animation.warden.move none 0 "v.body_x_rot=-v.zrot - 90;v.body_z_rot=-v.yrot;" xyrot`);
-        await JSONSender.commandWithResponse(this.ws, `/playanimation @e[type=fox] animation.player.attack.rotations none 0 "v.attack_body_rot_y=v.xrot;" zrot`);
-        await JSONSender.commandWithResponse(this.ws, `/playanimation @e[type=fox] animation.parrot.moving none 0 "v.wing_flap=(16-v.xpos)/0.3;" xpos`);
-        await JSONSender.commandWithResponse(this.ws, `/playanimation @e[type=fox] animation.minecart.move.v1.0 none 0 "v.rail_offset.x=0;v.rail_offset.y=1.6562+v.ypos/16+(math.cos(v.yrot)-1)*0.00769;v.rail_offset.z=0;" ypos`);
-        await JSONSender.commandWithResponse(this.ws, `/playanimation @e[type=fox] animation.parrot.dance none 0 "v.dance.x=-v.zpos-math.sin(v.yrot)*0.123;v.dance.y=0;" zpos`);
+        await JSONSender.commandWithResponse(this.ws, `/effect @e[type=fox,tag=${this.id}] instant_health infinite 255 true`);
+        await JSONSender.commandWithResponse(this.ws, `/effect @e[type=fox,tag=${this.id}] invisibility infinite 255 true`);
+        await JSONSender.commandWithResponse(this.ws, `/playanimation @e[type=fox,tag=${this.id}] animation.player.sleeping none 0 "" controller.animation.fox.move`);
+        await JSONSender.commandWithResponse(this.ws, `/playanimation @e[type=fox,tag=${this.id}] animation.creeper.swelling none 0 "v.xbasepos=v.xbasepos??0;v.ybasepos=v.ybasepos??0;v.zbasepos=v.zbasepos??0;v.xpos=v.xpos??0;v.ypos=v.ypos??0;v.zpos=v.zpos??0;v.xrot=v.xrot??0;v.yrot=v.yrot??0;v.zrot=v.zrot??0;v.scale=v.scale??1;v.xzscale=v.xzscale??1;v.yscale=v.yscale??1;v.swelling_scale1=2.1385*math.sqrt(v.xzscale)*math.sqrt(v.scale);v.swelling_scale2=2.1385*math.sqrt(v.yscale)*math.sqrt(v.scale);" scale`);
+        await JSONSender.commandWithResponse(this.ws, `/playanimation @e[type=fox,tag=${this.id}] animation.ender_dragon.neck_head_movement none 0 "v.head_rotation_x=0;v.head_rotation_y=0;v.head_rotation_z=0;v.head_position_x=(v.xbasepos*3741/8000)*math.sqrt(v.xzscale)*math.sqrt(v.scale);v.head_position_y=(10.6925+v.ybasepos*3741/8000)*math.sqrt(v.yscale)*math.sqrt(v.scale);v.head_position_z=(17.108-v.zbasepos*3741/8000)*math.sqrt(v.xzscale)*math.sqrt(v.scale);" posshift`);
+        await JSONSender.commandWithResponse(this.ws, `/playanimation @e[type=fox,tag=${this.id}] animation.warden.move none 0 "v.body_x_rot=-v.zrot - 90;v.body_z_rot=-v.yrot;" xyrot`);
+        await JSONSender.commandWithResponse(this.ws, `/playanimation @e[type=fox,tag=${this.id}] animation.player.attack.rotations none 0 "v.attack_body_rot_y=v.xrot;" zrot`);
+        await JSONSender.commandWithResponse(this.ws, `/playanimation @e[type=fox,tag=${this.id}] animation.parrot.moving none 0 "v.wing_flap=(16-v.xpos)/0.3;" xpos`);
+        await JSONSender.commandWithResponse(this.ws, `/playanimation @e[type=fox,tag=${this.id}] animation.minecart.move.v1.0 none 0 "v.rail_offset.x=0;v.rail_offset.y=1.6562+v.ypos/16+(math.cos(v.yrot)-1)*0.00769;v.rail_offset.z=0;" ypos`);
+        await JSONSender.commandWithResponse(this.ws, `/playanimation @e[type=fox,tag=${this.id}] animation.parrot.dance none 0 "v.dance.x=-v.zpos-math.sin(v.yrot)*0.123;v.dance.y=0;" zpos`);
+
+        this.update();
     }
 
     /**
      * Resets the root entity of the model.
      */
     async resetRoot() {
-        JSONSender.sendCommand(this.ws, `/tag @e[type=fox,name=${this.root}] add dead`);
-        JSONSender.sendCommand(this.ws, `/tp @e[type=fox,name=${this.root}] 0 10000 0`);
+        JSONSender.sendCommand(this.ws, `/tag @e[type=fox,name=${this.root},tag=${this.id}] add dead`);
+        JSONSender.sendCommand(this.ws, `/tp @e[type=fox,name=${this.root},tag=${this.id}] 0 10000 0`);
         await new Promise(resolve => setTimeout(resolve, 500));
 
-        JSONSender.sendCommand(this.ws, `/kill @e[type=fox,name=${this.root}]`);
+        JSONSender.sendCommand(this.ws, `/kill @e[type=fox,name=${this.root},tag=${this.id}]`);
         JSONSender.sendCommand(this.ws, `/summon fox ${this.root} 0 10000 0`);
-        JSONSender.sendCommand(this.ws, `/event entity @e[type=fox,name=${this.root}] minecraft:ageable_grow_up`);
-        JSONSender.sendCommand(this.ws, `/effect @e[type=fox,name=${this.root}] instant_health 9999999 255 true`);
-        JSONSender.sendCommand(this.ws, `/effect @e[type=fox,name=${this.root}] invisibility 9999999 255 true`);
-        JSONSender.sendCommand(this.ws, `/replaceitem entity @e[type=fox,name=${this.root}] slot.weapon.mainhand 0 air`);
+        JSONSender.sendCommand(this.ws, `/tag @e[type=fox,name=${this.root}] add ${this.id}`);
+        JSONSender.sendCommand(this.ws, `/effect @e[type=fox,name=${this.root},tag=${this.id}] instant_health infinite 255 true`);
+        JSONSender.sendCommand(this.ws, `/effect @e[type=fox,name=${this.root},tag=${this.id}] invisibility infinite 255 true`);
+        JSONSender.sendCommand(this.ws, `/replaceitem entity @e[type=fox,name=${this.root},tag=${this.id}] slot.weapon.mainhand 0 air`);
         this.rootCommand = `v.tick=0;`;
+    }
+
+    /**
+     * Updates only the position of the root.
+     */
+    updatePosition() {
+        if (this.attachedTo) {
+            this.alignTo(this.attachedTo);
+        } else {
+            JSONSender.sendCommand(this.ws, `/tp @e[type=fox,tag=!dead,tag=${this.id}] ${this.origin.x} ${this.origin.y} ${this.origin.z}`);
+        }
     }
 
     /**
      * Updates the state of the model.
      */
-    async update() {
+    update() {
         this.rootCommand = `v.tick=${globalTick};`;
 
         for (let [name, bone] of Object.entries(this.welds)) {
             bone.part1.cframe = bone.part0.cframe.multiply(bone.c0).multiply(bone.c1.inverse());
-        }
-
-        for (let [name, obj] of Object.entries(this.physicsBinds)) {
-            var rot = obj.quaternion.toAxisAngle();
-            this.getBlock(name).cframe = CFrame.new(obj.position.x, obj.position.y, obj.position.z).multiply(CFrame.fromAxisAngle(rot[0], rot[1]));
         }
 
         for (let i = 0; i < Object.values(this.blocks).length; i += 3) {
@@ -514,15 +576,11 @@ class DisplayModel {
                 }
             }
 
-            JSONSender.sendCommand(this.ws, `/playanimation @e[type=fox,name=${this.root}] animation.player.attack.positions none 0 "${this.rootCommand}" rootset${i}`);
+            JSONSender.sendCommand(this.ws, `/playanimation @e[type=fox,name=${this.root},tag=${this.id}] animation.player.attack.positions none 0 "${this.rootCommand}" rootset${i}`);
             this.rootCommand = `v.tick=${globalTick};`;
         }
 
-        if (this.attachedTo) {
-            JSONSender.sendCommand(this.ws, `/execute as @e[name=${this.attachedTo}] at @s run tp @e[type=fox,tag=!dead] ~${this.origin.x} ~${this.origin.y} ~${this.origin.z}`);
-        } else {
-            JSONSender.sendCommand(this.ws, `/tp @e[type=fox,tag=!dead] ${this.origin.x} ${this.origin.y} ${this.origin.z}`);
-        }
+        this.updatePosition();
 
         JSONSender.sendCommand(this.ws, `/stopsound @a mob.fox.ambient`);
         globalTick++;
@@ -549,12 +607,13 @@ class DisplayHandler {
 
     /**
      * Creates a new DisplayModel.
+     * @param {string} name - The name of the model.
      * @param {Vec3} origin - The origin of the model.
      * @param {string} attachedTo - If the model is attached to an entity.
      * @returns {DisplayModel} The created model.
      */
-    createModel(origin, attachedTo) {
-        return new DisplayModel(this.client.socket, origin, attachedTo);
+    createModel(name, origin, attachedTo) {
+        return new DisplayModel(this.client.socket, name, origin || new Vec3(0, 0, 0), attachedTo);
     }
 }
 

@@ -1,8 +1,5 @@
 export = CommandHandler;
 /**
-* @typedef {import("./client")} Client
-*/
-/**
  * A class that runs custom commands.
  */
 declare class CommandHandler {

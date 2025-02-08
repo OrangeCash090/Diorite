@@ -57,7 +57,7 @@ class Client extends EventEmitter {
         this.GUI = new GUIHandler(this);
 
         /** @type {DisplayHandler} */
-        this.DisplayBlock = new DisplayHandler(this);
+        this.DisplayHandler = new DisplayHandler(this);
 
         /** @type {null | Player} */
         this.localPlayer = null;

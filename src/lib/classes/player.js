@@ -69,9 +69,9 @@ class Player {
         }
     }
 
-    async raycast(range) {
+    async raycast(range, precision = 0.2) {
         var transform = await this.getTransform();
-        return await JSONSender.raycastBlock(this.client.socket, transform.position.offset(0, 1.6200103759765625, 0), transform.lookVector, range);
+        return await JSONSender.raycastBlock(this.client.socket, transform.position.offset(0, 1.6200103759765625, 0), transform.lookVector, range, precision);
     }
 
     async isInArea(min, max) {

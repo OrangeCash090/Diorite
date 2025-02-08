@@ -12,11 +12,12 @@ declare class DisplayHandler {
     client: Client;
     /**
      * Creates a new DisplayModel.
+     * @param {string} name - The name of the model.
      * @param {Vec3} origin - The origin of the model.
      * @param {string} attachedTo - If the model is attached to an entity.
      * @returns {DisplayModel} The created model.
      */
-    createModel(origin: Vec3, attachedTo: string): DisplayModel;
+    createModel(name: string, origin: Vec3, attachedTo: string): DisplayModel;
 }
 declare namespace DisplayHandler {
     export { Client };
@@ -29,10 +30,11 @@ declare class DisplayModel {
     /**
      * Creates a DisplayModel instance.
      * @param {WebSocket} ws - The WebSocket for communication.
+     * @param {string} name - The name of the model.
      * @param {Vec3} origin - The origin of the model.
      * @param {string} attachedTo - If the model is attached to an entity.
      */
-    constructor(ws: WebSocket, origin: Vec3, attachedTo: string);
+    constructor(ws: WebSocket, name: string, origin: Vec3, attachedTo: string);
     /** @type {WebSocket} */
     ws: WebSocket;
     /** @type {Vec3} */
@@ -47,12 +49,10 @@ declare class DisplayModel {
     welds: {
         [x: string]: Weld;
     };
-    /** @type {Object.<string, Object>} */
-    physicsBinds: {
-        [x: string]: any;
-    };
     /** @type {string} */
     root: string;
+    /** @type {string} */
+    id: string;
     /** @type {string} */
     rootCommand: string;
     /**
@@ -100,7 +100,6 @@ declare class DisplayModel {
      * @param {Vec3} pos - The new root CFrame.
      */
     setRootPos(pos: Vec3): void;
-    bindPhysicsTo(block: any, phys: any): void;
     /**
      * Loads a model from a Roblox JSON file.
      * @param {string} path - The file path to the JSON.
@@ -115,6 +114,11 @@ declare class DisplayModel {
      */
     loadAnimation(path: string, speed?: number, loop?: boolean): Animation;
     /**
+     * Aligns the model with the position of an entity
+     * @param {string} entity - The name of the entity
+     */
+    alignTo(entity: string): void;
+    /**
      * Spawns the model in the world.
      */
     spawn(): Promise<void>;
@@ -123,9 +127,13 @@ declare class DisplayModel {
      */
     resetRoot(): Promise<void>;
     /**
+     * Updates only the position of the root.
+     */
+    updatePosition(): void;
+    /**
      * Updates the state of the model.
      */
-    update(): Promise<void>;
+    update(): void;
 }
 type Client = import("./client");
 /**
@@ -134,11 +142,14 @@ type Client = import("./client");
 declare class DisplayBlock {
     /**
      * Creates a DisplayBlock instance.
+     * @param {WebSocket} ws - The websocket client.
      * @param {string} name - The name of the block.
      * @param {string} block - The type of block (e.g., "stone", "air").
      * @param {Vec3} size - The size of the block.
      */
-    constructor(name: string, block: string, size: Vec3);
+    constructor(ws: WebSocket, name: string, block: string, size: Vec3);
+    /** @type {WebSocket} */
+    ws: WebSocket;
     /** @type {string} */
     name: string;
     /** @type {Vec3} */
@@ -146,9 +157,11 @@ declare class DisplayBlock {
     /** @type {string} */
     block: string;
     /** @type {Object} */
-    cframe: any;
+    cframe: Object;
     /** @type {Vec3} */
     rotOffset: Vec3;
+    /** @type {string} */
+    modelId: string;
     /**
      * Variables used for position and rotation.
      * @type {{ position: string[], rotation: string[] }}
@@ -157,6 +170,11 @@ declare class DisplayBlock {
         position: string[];
         rotation: string[];
     };
+    /**
+     * Sets the displayed block.
+     * @param {string} name - The name of the minecraft block.
+     */
+    switchBlock(name: string): void;
 }
 declare class Weld {
     constructor(part0: any, part1: any, c0: any, c1: any, name: any);

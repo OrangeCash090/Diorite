@@ -13,7 +13,7 @@ export = Client;
  * Represents a client connection.
  * @extends {EventEmitter}
  */
-declare class Client extends EventEmitter<[never]> {
+declare class Client {
     /**
      * @param {any} socket - The WebSocket instance.
      * @param {any} server - The server instance.
@@ -34,12 +34,7 @@ declare class Client extends EventEmitter<[never]> {
     /** @type {GUIHandler} */
     GUI: GUIHandler;
     /** @type {DisplayHandler} */
-    DisplayBlock: DisplayHandler;
-    /**
-     * @property {Object} CFrame - A reference to the CFrame type.
-     * @property {Vec3} Vec3 - A reference to the Vec3 type.
-     * @property {function(...args: any): number} randomInt - A function that generates random integers.
-    */
+    DisplayHandler: DisplayHandler;
     /** @type {null | Player} */
     localPlayer: null | Player;
     /** @type {boolean} */
@@ -59,7 +54,7 @@ declare class Client extends EventEmitter<[never]> {
      *     console.log(`${sender}: ${message}`);
      * });
      */
-    on<K extends keyof ClientEvents>(event: K, listener: (...args: ClientEvents[K]) => void): this;
+    on<K extends keyof ClientEvents>(event: K, listener: (...args: ClientEvents[K]) => void): any;
     /**
      * Runs a command on the server.
      * @param {string} command - The command to execute.
@@ -86,7 +81,6 @@ declare class Client extends EventEmitter<[never]> {
 declare namespace Client {
     export { Response, ClientEvents };
 }
-import EventEmitter = require("events");
 import WorldHandler = require("./world");
 import CommandHandler = require("./command");
 import EventHandler = require("./event");
@@ -103,11 +97,11 @@ type ClientEvents = {
     /**
      * - Fired when an item is interacted with. Arguments: item, enchants
      */
-    itemInteracted: [name: string, enchants: any];
+    itemInteracted: [name: string, enchants: Object];
     /**
      * - Fired when right click is pressed. Arguments: item, enchants
      */
-    mouseDown: [name: string, enchants: any];
+    mouseDown: [name: string, enchants: Object];
     /**
      * - Fired when right click is released.
      */

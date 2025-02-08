@@ -3,7 +3,7 @@ export = GUI;
  * Represents the GUI system, managing pages and interactions.
  * @extends EventEmitter
  */
-declare class GUI extends EventEmitter<[never]> {
+declare class GUI {
     /**
      * Creates a GUI.
      * @param {Client} client - The client instance.
@@ -42,7 +42,6 @@ declare class GUI extends EventEmitter<[never]> {
 declare namespace GUI {
     export { Client };
 }
-import EventEmitter = require("events");
 /**
  * Represents a page in the GUI.
  */
@@ -103,7 +102,7 @@ type Client = import("./client");
  * Represents a basic text label element.
  * @extends EventEmitter
  */
-declare class TextLabel extends EventEmitter<[never]> {
+declare class TextLabel {
     /**
      * Creates a TextLabel.
      * @param {string} text - The text content of the label.

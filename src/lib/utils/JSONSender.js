@@ -22,11 +22,11 @@ class CommandQueue {
             if (this.queue.length >= this.maxQueueSize) {
                 this.queue.shift(); // Drop the oldest command to make room
             }
-    
+
             this.queue.push({ fn, resolve, reject });
             this.processQueue();
         });
-    }    
+    }
 
     async processQueue() {
         if (this.inFlight >= this.limit || this.queue.length === 0) {
@@ -50,6 +50,58 @@ class CommandQueue {
 
 function rad(angle) {
     return angle * (Math.PI / 180);
+}
+
+/**
+ * Computes the surface normal of the intersection of a ray with an axis-aligned cube.
+ * @param {Vec3} rayOrigin - The origin of the ray.
+ * @param {Vec3} rayDir - The normalized direction of the ray.
+ * @param {Vec3} min - The minimum coordinates of the cube.
+ * @param {Vec3} max - The maximum coordinates of the cube.
+ * @returns {Vec3 | null} The normal of the intersected face, or null if no intersection.
+ */
+function getSurfaceNormal(rayOrigin, rayDir, min, max) {
+    let tMin = (min.x - rayOrigin.x) / rayDir.x;
+    let tMax = (max.x - rayOrigin.x) / rayDir.x;
+    
+    if (tMin > tMax) [tMin, tMax] = [tMax, tMin];
+
+    let tyMin = (min.y - rayOrigin.y) / rayDir.y;
+    let tyMax = (max.y - rayOrigin.y) / rayDir.y;
+    
+    if (tyMin > tyMax) [tyMin, tyMax] = [tyMax, tyMin];
+
+    if ((tMin > tyMax) || (tyMin > tMax)) return null;
+
+    if (tyMin > tMin) tMin = tyMin;
+    if (tyMax < tMax) tMax = tyMax;
+
+    let tzMin = (min.z - rayOrigin.z) / rayDir.z;
+    let tzMax = (max.z - rayOrigin.z) / rayDir.z;
+    
+    if (tzMin > tzMax) [tzMin, tzMax] = [tzMax, tzMin];
+
+    if ((tMin > tzMax) || (tzMin > tMax)) return null;
+
+    if (tzMin > tMin) tMin = tzMin;
+    if (tzMax < tMax) tMax = tzMax;
+
+    if (tMin < 0 && tMax < 0) return null; // No valid intersection in front of the ray.
+
+    // Determine intersection point
+    let t = tMin >= 0 ? tMin : tMax;
+    let intersection = rayOrigin.plus(rayDir.scaled(t));
+
+    // Determine the normal
+    const epsilon = 1e-5;
+    if (Math.abs(intersection.x - min.x) < epsilon) return new Vec3(-1, 0, 0);
+    if (Math.abs(intersection.x - max.x) < epsilon) return new Vec3(1, 0, 0);
+    if (Math.abs(intersection.y - min.y) < epsilon) return new Vec3(0, -1, 0);
+    if (Math.abs(intersection.y - max.y) < epsilon) return new Vec3(0, 1, 0);
+    if (Math.abs(intersection.z - min.z) < epsilon) return new Vec3(0, 0, -1);
+    if (Math.abs(intersection.z - max.z) < epsilon) return new Vec3(0, 0, 1);
+
+    return null;
 }
 
 function getDynamicBlockIdentifier(blkobject) {
@@ -329,11 +381,11 @@ async function getArea(ws, start, end) {
     })
 }
 
-async function raycastBlock(ws, origin, direction, range = 5) {
+async function raycastBlock(ws, origin, direction, range = 5, precision = 0.2) {
     return new Promise(async (resolve, reject) => {
         var blocks = [];
 
-        for (let i = 0; i <= range; i+=0.2) {
+        for (let i = 0; i <= range; i += precision) {
             var pos = new Vec3(origin.x + (direction.x * (i)), origin.y + (direction.y * (i)), origin.z + (direction.z * (i)));
 
             blocks.push({
@@ -344,7 +396,8 @@ async function raycastBlock(ws, origin, direction, range = 5) {
 
         for (let i = 0; i < blocks.length; i++) {
             if (await blocks[i].name != "air") {
-                resolve({name: await blocks[i].name, position: blocks[i].pos})
+                resolve({ name: await blocks[i].name, position: blocks[i].pos, normal: getSurfaceNormal(origin, direction, pos.floored(), pos.floored().offset(1, 1, 1))})
+                break;
             }
         }
 
