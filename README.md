@@ -2,9 +2,7 @@
 
 [![NPM version](https://img.shields.io/npm/v/diorite.svg?color=success&label=npm%20package&logo=npm)](https://www.npmjs.com/package/diorite)
 
-A websocket API for Minecraft Bedrock Edition designed for easy use and enabling complex projects.
-
-WORK IN PROGRESS
+A websocket API for Minecraft Bedrock Edition designed for easy use and enabling complex projects. This project is still a WIP, make sure to update to the latest version.
 
 ![Diorite](images/image.png)
 
