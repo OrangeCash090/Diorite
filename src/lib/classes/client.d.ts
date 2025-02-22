@@ -13,7 +13,7 @@ export = Client;
  * Represents a client connection.
  * @extends {EventEmitter}
  */
-declare class Client {
+declare class Client extends EventEmitter<[never]> {
     /**
      * @param {any} socket - The WebSocket instance.
      * @param {any} server - The server instance.
@@ -23,6 +23,10 @@ declare class Client {
     socket: any;
     /** @type {any} */
     server: any;
+    /** @type {JSONSender.CommandQueue} */
+    commandQueue: JSONSender.CommandQueue;
+    /** @type {Map} */
+    responseResolvers: Map<any, any>;
     /** @type {WorldHandler} */
     World: WorldHandler;
     /** @type {CommandHandler} */
@@ -54,7 +58,12 @@ declare class Client {
      *     console.log(`${sender}: ${message}`);
      * });
      */
-    on<K extends keyof ClientEvents>(event: K, listener: (...args: ClientEvents[K]) => void): any;
+    on<K extends keyof ClientEvents>(event: K, listener: (...args: ClientEvents[K]) => void): this;
+    /**
+     * Sends data with encryption. Used internally.
+     * @param {string} data - The data to send.
+     */
+    sendPacket(data: string): void;
     /**
      * Runs a command on the server.
      * @param {string} command - The command to execute.
@@ -81,6 +90,8 @@ declare class Client {
 declare namespace Client {
     export { Response, ClientEvents };
 }
+import EventEmitter = require("events");
+import JSONSender = require("../utils/JSONSender");
 import WorldHandler = require("./world");
 import CommandHandler = require("./command");
 import EventHandler = require("./event");

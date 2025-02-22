@@ -1,3 +1,4 @@
+// @ts-nocheck
 const EventEmitter = require("node:events");
 const JSONSender = require("../utils/JSONSender");
 
@@ -382,7 +383,7 @@ class GUI extends EventEmitter {
      */
     render() {
         if (this.currentPage) {
-            JSONSender.sendTitle(this.client.socket, this.currentPage.text, "@s", "actionbar");
+            JSONSender.sendTitle(this.client, this.currentPage.text, "@s", "actionbar");
             this.currentPage.update();
         }
     }

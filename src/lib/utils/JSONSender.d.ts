@@ -4,7 +4,7 @@ export class CommandQueue {
     inFlight: number;
     limit: any;
     maxQueueSize: any;
-    enqueue(fn: any): any;
+    enqueue(fn: any): Promise<any>;
     processQueue(): Promise<void>;
 }
 export function sendCommand(ws: any, cmd: any): void;

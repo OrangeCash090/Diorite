@@ -18,6 +18,22 @@ declare class DisplayHandler {
      * @returns {DisplayModel} The created model.
      */
     createModel(name: string, origin: Vec3, attachedTo: string): DisplayModel;
+    /**
+    * Creates a model from a Roblox JSON file.
+    * @param {string} path - The file path to the JSON.
+    * @param {Vec3} origin - The origin of the model.
+    * @param {string} attachedTo - If the model is attached to an entity.
+    * @returns {DisplayModel} The created model.
+    */
+    createFromRoblox(name: any, path: string, origin: Vec3, attachedTo: string): DisplayModel;
+    /**
+    * Creates a model from a Minecraft Geometry File.
+    * @param {string} path - The file path to the JSON.
+    * @param {Vec3} origin - The origin of the model.
+    * @param {string} attachedTo - If the model is attached to an entity.
+    * @returns {DisplayModel} The created model.
+    */
+    createFromGeo(name: any, path: string, origin: Vec3, attachedTo: string): DisplayModel;
 }
 declare namespace DisplayHandler {
     export { Client };
@@ -45,14 +61,24 @@ declare class DisplayModel {
     blocks: {
         [x: string]: DisplayBlock;
     };
+    /** @type {Object.<string, DisplayBlock>} */
+    fakeBlocks: {
+        [x: string]: DisplayBlock;
+    };
     /** @type {Object.<string, Weld>} */
     welds: {
         [x: string]: Weld;
+    };
+    /** @type {Object.<string, Animation>} */
+    animations: {
+        [x: string]: Animation;
     };
     /** @type {string} */
     root: string;
     /** @type {string} */
     id: string;
+    /** @type {string} */
+    importType: string;
     /** @type {string} */
     rootCommand: string;
     /**
@@ -60,9 +86,10 @@ declare class DisplayModel {
      * @param {string} name - The name of the block.
      * @param {string} [block="stone"] - The type of block.
      * @param {Vec3} [size=new Vec3(1, 1, 1)] - The size of the block.
+     * @param {boolean} rendered - Whether the block is rendered or not.
      * @returns {DisplayBlock} The created block.
      */
-    createBlock(name: string, block?: string, size?: Vec3): DisplayBlock;
+    createBlock(name: string, block?: string, size?: Vec3, rendered?: boolean): DisplayBlock;
     /**
      * Creates a weld between two blocks.
      * @param {DisplayBlock} part0 - The first block.
@@ -70,9 +97,10 @@ declare class DisplayModel {
      * @param {CFrame} c0 - The offset for the first block.
      * @param {CFrame} c1 - The offset for the second block.
      * @param {string} name - The name of the weld.
+     * @param {boolean} active - Whether or not the weld moves.
      * @returns {Weld} The created weld.
      */
-    createWeld(part0: DisplayBlock, part1: DisplayBlock, c0: any, c1: any, name: string): Weld;
+    createWeld(part0: DisplayBlock, part1: DisplayBlock, c0: typeof CFrame, c1: typeof CFrame, name: string, active?: boolean): Weld;
     /**
      * Retrieves a block by name.
      * @param {string} name - The name of the block.
@@ -90,7 +118,7 @@ declare class DisplayModel {
      * @param {string} name - The name of the weld.
      * @param {CFrame} cf - The new CFrame.
      */
-    setWeldCFrame(name: string, cf: any): void;
+    setWeldCFrame(name: string, cf: typeof CFrame): void;
     /**
      * Resets all welds to their initial state.
      */
@@ -101,18 +129,22 @@ declare class DisplayModel {
      */
     setRootPos(pos: Vec3): void;
     /**
-     * Loads a model from a Roblox JSON file.
-     * @param {string} path - The file path to the JSON.
-     */
-    loadFromRoblox(path: string): void;
-    /**
-     * Loads an animation from a file.
+     * Loads a Roblox animation from a file.
      * @param {string} path - The file path to the animation.
      * @param {number} [speed=1.5] - The playback speed.
      * @param {boolean} [loop=false] - Whether the animation should loop.
      * @returns {Animation} The loaded animation.
      */
-    loadAnimation(path: string, speed?: number, loop?: boolean): Animation;
+    loadRobloxAnimation(path: string, speed?: number, loop?: boolean): Animation;
+    /**
+     * Loads a Minecraft animation from a file.
+     * @param {string} path - The file path to the animation.
+     * @param {number} [speed=1.5] - The playback speed.
+     * @returns {Object.<string, Animation>} The loaded animations.
+     */
+    loadMinecraftAnimation(path: string, speed?: number): {
+        [x: string]: Animation;
+    };
     /**
      * Aligns the model with the position of an entity
      * @param {string} entity - The name of the entity
@@ -146,8 +178,9 @@ declare class DisplayBlock {
      * @param {string} name - The name of the block.
      * @param {string} block - The type of block (e.g., "stone", "air").
      * @param {Vec3} size - The size of the block.
+     * @param {boolean} rendered - Whether the block is rendered or not.
      */
-    constructor(ws: WebSocket, name: string, block: string, size: Vec3);
+    constructor(ws: WebSocket, name: string, block: string, size: Vec3, rendered?: boolean);
     /** @type {WebSocket} */
     ws: WebSocket;
     /** @type {string} */
@@ -156,8 +189,10 @@ declare class DisplayBlock {
     size: Vec3;
     /** @type {string} */
     block: string;
-    /** @type {Object} */
-    cframe: Object;
+    /** @type {boolean} */
+    rendered: boolean;
+    /** @type {CFrame} */
+    cframe: typeof CFrame;
     /** @type {Vec3} */
     rotOffset: Vec3;
     /** @type {string} */
@@ -171,18 +206,19 @@ declare class DisplayBlock {
         rotation: string[];
     };
     /**
-     * Sets the displayed block.
+     * Sets the displayed block's texture.
      * @param {string} name - The name of the minecraft block.
      */
-    switchBlock(name: string): void;
+    switchTexture(name: string): void;
 }
 declare class Weld {
-    constructor(part0: any, part1: any, c0: any, c1: any, name: any);
+    constructor(part0: any, part1: any, c0: any, c1: any, name: any, active?: boolean);
     part0: any;
     part1: any;
     c0: any;
     c1: any;
     name: any;
+    active: boolean;
     base: {
         c0: any;
         c1: any;
@@ -203,3 +239,4 @@ declare class Animation {
     play(): void;
     stop(): void;
 }
+import CFrame = require("../utils/cframe");

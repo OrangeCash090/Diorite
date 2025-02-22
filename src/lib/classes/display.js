@@ -1,4 +1,4 @@
-// @ts-ignore
+// @ts-nocheck
 const blockColors = require("../utils/json/colors.json");
 const JSONSender = require("../utils/JSONSender");
 const CFrame = require("../utils/cframe");
@@ -61,28 +61,65 @@ function catmullRomInterpolation(t, p0, p1, p2, p3) {
 function convertKeyframes(frames) {
     const result = {};
 
-    for (let i = 0; i < frames.length; i++) {
-        const keyframe = frames[i];
-        const time = keyframe.tm;
-
-        for (let [name, value] of Object.entries(keyframe)) {
-            name = removeSpaces(name);
-
-            if (name !== "tm") {
-                if (result[name] == null) {
-                    result[name] = [];
+    if (frames[0] != undefined) {
+        for (let i = 0; i < frames.length; i++) {
+            const keyframe = frames[i];
+            const time = keyframe.tm;
+    
+            for (let [name, value] of Object.entries(keyframe)) {
+                name = removeSpaces(name);
+    
+                if (name !== "tm") {
+                    if (result[name] == null) {
+                        result[name] = [];
+                    }
+    
+                    // Assume value.cf contains a flat array for CFrame
+                    const cf = CFrame.new(
+                        value.cf[0], value.cf[1], value.cf[2],
+                        value.cf[3], value.cf[4], value.cf[5],
+                        value.cf[6], value.cf[7], value.cf[8],
+                        value.cf[9], value.cf[10], value.cf[11]
+                    );
+    
+                    result[name].push([time, cf]);
                 }
-
-                // Assume value.cf contains a flat array for CFrame
-                const cf = CFrame.new(
-                    value.cf[0], value.cf[1], value.cf[2],
-                    value.cf[3], value.cf[4], value.cf[5],
-                    value.cf[6], value.cf[7], value.cf[8],
-                    value.cf[9], value.cf[10], value.cf[11]
-                );
-
-                result[name].push([time, cf]);
             }
+        }
+    } else {
+        for (let [name, bone] of Object.entries(frames)) {
+            result[name] = {};
+            var temp = [];
+
+            if (bone.position) {
+                for (let [time, value] of Object.entries(bone.position)) {
+                    result[name][time] = CFrame.new(value[0], value[1], value[2]);
+                }
+            }
+
+            if (bone.rotation) {
+                if (bone.rotation[0] == undefined) {
+                    for (let [time, value] of Object.entries(bone.rotation)) {
+                        if (result[name][time] != undefined) {
+                            result[name][time] = result[name][time].multiply(CFrame.fromEulerAnglesXYZ(rad(value[0]), rad(value[1]), rad(value[2])));
+                        } else {
+                            result[name][time] = CFrame.fromEulerAnglesXYZ(rad(value[0]), rad(value[1]), rad(value[2]));
+                        }
+                    }
+                } else {
+                    if (result[name]["0.0"] != undefined) {
+                        result[name]["0.0"] = result[name]["0.0"].multiply(CFrame.fromEulerAnglesXYZ(rad(bone.rotation[0]), rad(bone.rotation[1]), rad(bone.rotation[2])));
+                    } else {
+                        result[name]["0.0"] = CFrame.fromEulerAnglesXYZ(rad(bone.rotation[0]), rad(bone.rotation[1]), rad(bone.rotation[2]));
+                    }
+                }
+            }
+
+            for (let [time, cf] of Object.entries(result[name])) {
+                temp.push([Number(time), cf]);
+            }
+
+            result[name] = temp;
         }
     }
 
@@ -212,12 +249,13 @@ class Animation {
 }
 
 class Weld {
-    constructor(part0, part1, c0, c1, name) {
+    constructor(part0, part1, c0, c1, name, active = true) {
         this.part0 = part0;
         this.part1 = part1;
         this.c0 = c0;
         this.c1 = c1;
         this.name = name;
+        this.active = active;
 
         this.base = {
             c0: c0,
@@ -245,8 +283,9 @@ class DisplayBlock {
      * @param {string} name - The name of the block.
      * @param {string} block - The type of block (e.g., "stone", "air").
      * @param {Vec3} size - The size of the block.
+     * @param {boolean} rendered - Whether the block is rendered or not.
      */
-    constructor(ws, name, block, size) {
+    constructor(ws, name, block, size, rendered = true) {
         /** @type {WebSocket} */
         this.ws = ws;
 
@@ -259,7 +298,10 @@ class DisplayBlock {
         /** @type {string} */
         this.block = block;
 
-        /** @type {Object} */
+        /** @type {boolean} */
+        this.rendered = rendered;
+
+        /** @type {CFrame} */
         this.cframe = CFrame.new(0, 0, 0);
 
         /** @type {Vec3} */
@@ -287,10 +329,10 @@ class DisplayBlock {
     }
 
     /**
-     * Sets the displayed block.
+     * Sets the displayed block's texture.
      * @param {string} name - The name of the minecraft block.
      */
-    switchBlock(name) {
+    switchTexture(name) {
         this.block = name;
         JSONSender.sendCommand(this.ws, `/replaceitem entity @e[type=fox,name=${this.name},tag=${this.modelId}] slot.weapon.mainhand 0 ${name}`);
     }
@@ -320,14 +362,23 @@ class DisplayModel {
         /** @type {Object.<string, DisplayBlock>} */
         this.blocks = {};
 
+        /** @type {Object.<string, DisplayBlock>} */
+        this.fakeBlocks = {};
+
         /** @type {Object.<string, Weld>} */
         this.welds = {};
+
+        /** @type {Object.<string, Animation>} */
+        this.animations = {};
 
         /** @type {string} */
         this.root = "root" + randomInteger(0, 500);
 
         /** @type {string} */
         this.id = name || "model" + randomInteger(0, 100);
+
+        /** @type {string} */
+        this.importType = "none";
 
         /** @type {string} */
         this.rootCommand = `v.tick=0;`;
@@ -339,21 +390,27 @@ class DisplayModel {
      * @param {string} name - The name of the block.
      * @param {string} [block="stone"] - The type of block.
      * @param {Vec3} [size=new Vec3(1, 1, 1)] - The size of the block.
+     * @param {boolean} rendered - Whether the block is rendered or not.
      * @returns {DisplayBlock} The created block.
      */
-    createBlock(name, block = "stone", size = new Vec3(1, 1, 1)) {
+    createBlock(name, block = "stone", size = new Vec3(1, 1, 1), rendered = true) {
         if (this.blocks[name] != undefined) {
             name = `P${Object.keys(this.blocks).length}`;
         }
 
-        var newDisplay = new DisplayBlock(this.ws, name, block, size);
+        var newDisplay = new DisplayBlock(this.ws, name, block, size, rendered);
         var adjustments = scaleIllusion(size);
 
         newDisplay.size = adjustments.scale;
         newDisplay.rotOffset = adjustments.rotation;
         newDisplay.modelId = this.id;
 
-        this.blocks[name] = newDisplay;
+        if (rendered) {
+            this.blocks[name] = newDisplay;
+        } else {
+            this.fakeBlocks[name] = newDisplay;
+        }
+
         return newDisplay;
     }
 
@@ -364,10 +421,11 @@ class DisplayModel {
      * @param {CFrame} c0 - The offset for the first block.
      * @param {CFrame} c1 - The offset for the second block.
      * @param {string} name - The name of the weld.
+     * @param {boolean} active - Whether or not the weld moves.
      * @returns {Weld} The created weld.
      */
-    createWeld(part0, part1, c0, c1, name) {
-        var newWeld = new Weld(part0, part1, c0, c1, name);
+    createWeld(part0, part1, c0, c1, name, active = true) {
+        var newWeld = new Weld(part0, part1, c0, c1, name, active);
         this.welds[name] = newWeld;
 
         return newWeld;
@@ -379,7 +437,7 @@ class DisplayModel {
      * @returns {DisplayBlock|undefined} The block or undefined if not found.
      */
     getBlock(name) {
-        return this.blocks[name];
+        return this.blocks[name] || this.fakeBlocks[name];
     }
 
     /**
@@ -420,53 +478,44 @@ class DisplayModel {
     }
 
     /**
-     * Loads a model from a Roblox JSON file.
-     * @param {string} path - The file path to the JSON.
-     */
-    loadFromRoblox(path) {
-        // @ts-ignore
-        var data = JSON.parse(fs.readFileSync(path));
-
-        var parts = data.Parts;
-        var welds = data.Welds;
-        var root = data.Root;
-
-        for (let i = 0; i < parts.length; i++) {
-            var texture = parts[i].block || (parts[i].transparency == 0 ? findColor(new Vec3(parts[i].color[0] / 255, parts[i].color[1] / 255, parts[i].color[2] / 255)) : "air");
-            var block = this.createBlock(removeSpaces(parts[i].name), texture, new Vec3(parts[i].size[0], parts[i].size[1], parts[i].size[2]));
-            var cf = parts[i].cframe;
-
-            block.cframe = CFrame.new(cf[0], cf[1], cf[2], cf[3], cf[4], cf[5], cf[6], cf[7], cf[8], cf[9], cf[10], cf[11]);
-        }
-
-        for (let i = 0; i < welds.length; i++) {
-            var c0 = welds[i].c0;
-            var c1 = welds[i].c1;
-
-            this.createWeld(this.getBlock(removeSpaces(welds[i].part0)), this.getBlock(removeSpaces(welds[i].part1)), CFrame.new(c0[0], c0[1], c0[2], c0[3], c0[4], c0[5], c0[6], c0[7], c0[8], c0[9], c0[10], c0[11]), CFrame.new(c1[0], c1[1], c1[2], c1[3], c1[4], c1[5], c1[6], c1[7], c1[8], c1[9], c1[10], c1[11]), removeSpaces(welds[i].name));
-        }
-
-        if (root != null) {
-            delete this.blocks[this.root];
-            JSONSender.sendCommand(this.ws, `/kill @e[type=fox,name=${this.root},tag=${this.id}]`);
-            this.root = root;
-        }
-    }
-
-    /**
-     * Loads an animation from a file.
+     * Loads a Roblox animation from a file.
      * @param {string} path - The file path to the animation.
      * @param {number} [speed=1.5] - The playback speed.
      * @param {boolean} [loop=false] - Whether the animation should loop.
      * @returns {Animation} The loaded animation.
      */
-    loadAnimation(path, speed = 1.5, loop = false) {
-        // @ts-ignore
+    loadRobloxAnimation(path, speed = 1.5, loop = false) {
+        var name = path.split("/").pop().replace(".json", "");
         var data = JSON.parse(fs.readFileSync(path));
         var length = data[data.length - 1].tm;
 
         var keyframes = convertKeyframes(data);
-        return new Animation("Animation", this, keyframes, length, loop, speed);
+        var anim = new Animation(name, this, keyframes, length, loop, speed);
+
+        this.animations[name] = anim;
+        return anim;
+    }
+
+    /**
+     * Loads a Minecraft animation from a file.
+     * @param {string} path - The file path to the animation.
+     * @param {number} [speed=1.5] - The playback speed.
+     * @returns {Object.<string, Animation>} The loaded animations.
+     */
+    loadMinecraftAnimation(path, speed = 1.5) {
+        var animations = {};
+        var data = JSON.parse(fs.readFileSync(path));
+        
+        for (let [name, sequence] of Object.entries(data.animations)) {
+            var length = sequence.length;
+            var keyframes = convertKeyframes(sequence.bones);
+            var anim = new Animation(name, this, keyframes, length, sequence.loop, speed);
+
+            this.animations[name] = anim;
+            animations[name] = anim;
+        }
+
+        return animations;
     }
 
     /**
@@ -564,7 +613,9 @@ class DisplayModel {
         this.rootCommand = `v.tick=${globalTick};`;
 
         for (let [name, bone] of Object.entries(this.welds)) {
-            bone.part1.cframe = bone.part0.cframe.multiply(bone.c0).multiply(bone.c1.inverse());
+            if (bone.active) {
+                bone.part1.cframe = bone.part0.cframe.multiply(bone.c0).multiply(bone.c1.inverse());
+            }
         }
 
         for (let i = 0; i < Object.values(this.blocks).length; i += 3) {
@@ -613,7 +664,116 @@ class DisplayHandler {
      * @returns {DisplayModel} The created model.
      */
     createModel(name, origin, attachedTo) {
-        return new DisplayModel(this.client.socket, name, origin || new Vec3(0, 0, 0), attachedTo);
+        return new DisplayModel(this.client, name, origin || new Vec3(0, 0, 0), attachedTo);
+    }
+
+    /**
+    * Creates a model from a Roblox JSON file.
+    * @param {string} path - The file path to the JSON.
+    * @param {Vec3} origin - The origin of the model.
+    * @param {string} attachedTo - If the model is attached to an entity.
+    * @returns {DisplayModel} The created model.
+    */
+    createFromRoblox(name, path, origin, attachedTo) {
+        var model = this.createModel(name, origin, attachedTo);
+        var data = JSON.parse(fs.readFileSync(path));
+
+        var parts = data.Parts;
+        var welds = data.Welds;
+        var root = data.Root;
+
+        for (let i = 0; i < parts.length; i++) {
+            var texture = parts[i].block || (parts[i].transparency == 0 ? findColor(new Vec3(parts[i].color[0] / 255, parts[i].color[1] / 255, parts[i].color[2] / 255)) : "air");
+            var block = model.createBlock(removeSpaces(parts[i].name), texture, new Vec3(parts[i].size[0], parts[i].size[1], parts[i].size[2]));
+            var cf = parts[i].cframe;
+
+            block.cframe = CFrame.new(cf[0], cf[1], cf[2], cf[3], cf[4], cf[5], cf[6], cf[7], cf[8], cf[9], cf[10], cf[11]);
+        }
+
+        for (let i = 0; i < welds.length; i++) {
+            var c0 = welds[i].c0;
+            var c1 = welds[i].c1;
+
+            model.createWeld(model.getBlock(removeSpaces(welds[i].part0)), model.getBlock(removeSpaces(welds[i].part1)), CFrame.new(c0[0], c0[1], c0[2], c0[3], c0[4], c0[5], c0[6], c0[7], c0[8], c0[9], c0[10], c0[11]), CFrame.new(c1[0], c1[1], c1[2], c1[3], c1[4], c1[5], c1[6], c1[7], c1[8], c1[9], c1[10], c1[11]), removeSpaces(welds[i].name));
+        }
+
+        if (root != null) {
+            delete model.blocks[model.root];
+            JSONSender.sendCommand(this.client, `/kill @e[type=fox,name=${model.root},tag=${model.id}]`);
+            model.root = root;
+        }
+
+        model.importType = "Roblox";
+        return model;
+    }
+
+    /**
+    * Creates a model from a Minecraft Geometry File.
+    * @param {string} path - The file path to the JSON.
+    * @param {Vec3} origin - The origin of the model.
+    * @param {string} attachedTo - If the model is attached to an entity.
+    * @returns {DisplayModel} The created model.
+    */
+    createFromGeo(name, path, origin, attachedTo) {
+        var model = this.createModel(name, origin, attachedTo);
+        var data = JSON.parse(fs.readFileSync(path));
+        var bones = data["minecraft:geometry"][0].bones;
+
+        for (let i = 0; i < bones.length; i++) {
+            var name = bones[i].name;
+            var cubes = bones[i].cubes;
+            var pivot = bones[i].pivot;
+            var parent = bones[i].parent;
+
+            if (cubes != null) {
+                for (let j = 0; j < cubes.length; j++) {
+                    var cube = cubes[j];
+    
+                    var origin = new Vec3(cube.origin[0] / 16, cube.origin[1] / 16, cube.origin[2] / 16);
+                    var size = new Vec3(cube.size[0] / 16, cube.size[1] / 16, cube.size[2] / 16);
+                    var pos = new Vec3(origin.x + (size.x / 2), origin.y + (size.y / 2), origin.z + (size.z / 2));
+                    var inflate = cube.inflate ? cube.inflate / 8 : 0;
+    
+                    var block = model.createBlock(name + (j == 0 ? "" : j), "smooth_stone", new Vec3(size.x + inflate, size.y + inflate, size.z + inflate));
+                    block.cframe = CFrame.new(pos);
+    
+                    var center = pivot != null ? new Vec3(pivot[0] / 16, pivot[1] / 16, pivot[2] / 16) : pos;
+    
+                    if (j == 0) {
+                        if (parent == null) {
+                            var c0 = CFrame.new(center);
+                            var c1 = CFrame.new(center.minus(pos));
+        
+                            model.createWeld(model.getBlock(model.root), block, c0, c1, name);
+                        } else {
+                            var c0 = CFrame.new(center.minus(model.getBlock(parent).cframe.position));
+                            var c1 = CFrame.new(center.minus(pos));
+        
+                            model.createWeld(model.getBlock(parent), block, c0, c1, name);
+                        }
+                    } else {
+                        var c0 = CFrame.new(center.minus(model.getBlock(name).cframe.position));
+                        var c1 = CFrame.new(center.minus(pos));
+    
+                        model.createWeld(model.getBlock(name), block, c0, c1, name + j);
+                    }
+                }
+            } else {
+                var pos = model.getBlock(parent).cframe.position;
+                var center = pivot != null ? new Vec3(pivot[0] / 16, pivot[1] / 16, pivot[2] / 16) : pos;
+
+                var c0 = CFrame.new(center.minus(model.getBlock(parent).cframe.position));
+                var c1 = CFrame.new(pos);
+
+                var block = model.createBlock(name, "NULL", new Vec3(1,1,1), false);
+                block.cframe = CFrame.new(center);
+
+                model.createWeld(model.getBlock(parent), block, c0, c1, name);
+            }
+        }
+
+        model.importType = "Minecraft";
+        return model;
     }
 }
 

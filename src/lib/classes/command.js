@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * @param {string} string
  * @param {string} subString

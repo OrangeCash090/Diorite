@@ -195,19 +195,13 @@ function convertBlock(javaId, identifier, oldName) {
 async function sendWithResponse(ws, data, reqID, cmd) {
     return new Promise((resolve, reject) => {
         ws.responseResolvers.set(reqID, { resolve, reject, cmd: cmd });
-
-        ws.send(data, (error) => {
-            if (error) {
-                ws.responseResolvers.delete(reqID); // Clean up on error
-                reject(error);
-            }
-        });
+        ws.sendPacket(data);
     });
 }
 
 function sendCommand(ws, cmd) {
     ws.commandQueue.enqueue(() => {
-        ws.send(JSON.stringify({
+        ws.sendPacket(JSON.stringify({
             header: {
                 version: 1,
                 requestId: uuid4(),
@@ -254,7 +248,7 @@ async function commandWithResponse(ws, cmd) {
 }
 
 function sendSubscribe(ws, event) {
-    ws.send(JSON.stringify({
+    ws.sendPacket(JSON.stringify({
         header: {
             version: 1,
             requestId: uuid4(),

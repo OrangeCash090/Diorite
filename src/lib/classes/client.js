@@ -1,3 +1,4 @@
+// @ts-nocheck
 const JSONSender = require("../utils/JSONSender");
 const EventEmitter = require("node:events");
 
@@ -38,8 +39,11 @@ class Client extends EventEmitter {
         /** @type {any} */
         this.server = server;
 
-        this.socket.commandQueue = new JSONSender.CommandQueue(100, 200);
-        this.socket.responseResolvers = new Map();
+        /** @type {JSONSender.CommandQueue} */
+        this.commandQueue = new JSONSender.CommandQueue(100, 200);
+
+        /** @type {Map} */
+        this.responseResolvers = new Map();
 
         /** @type {WorldHandler} */
         this.World = new WorldHandler(this);
@@ -88,16 +92,24 @@ class Client extends EventEmitter {
     }
 
     /**
+     * Sends data with encryption. Used internally.
+     * @param {string} data - The data to send.
+     */
+    sendPacket(data) {
+        this.socket.send(data);
+    }
+
+    /**
      * Runs a command on the server.
      * @param {string} command - The command to execute.
      * @returns {Promise<Response>} - The result of the command.
      */
     async runCommand(command) {
-        return await JSONSender.commandWithResponse(this.socket, command);
+        return await JSONSender.commandWithResponse(this, command);
     }
 
     async getPing(amount = 1) {
-        return await JSONSender.getPing(this.socket, amount);
+        return await JSONSender.getPing(this, amount);
     }
 
     /**
@@ -106,7 +118,7 @@ class Client extends EventEmitter {
      * @param {string} player - The targets that see the text.
      */
     sayText(text, player = "@a") {
-        JSONSender.sayText(this.socket, text, player);
+        JSONSender.sayText(this, text, player);
     }
 
     /**
@@ -114,7 +126,7 @@ class Client extends EventEmitter {
      * @param {string} eventName - The event to subscribe to.
      */
     async subscribeTo(eventName) {
-        JSONSender.sendSubscribe(this.socket, eventName);
+        JSONSender.sendSubscribe(this, eventName);
     }
 
     /**

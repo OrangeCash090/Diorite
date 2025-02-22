@@ -1,3 +1,4 @@
+// @ts-nocheck
 const JSONSender = require("../utils/JSONSender");
 const { Vec3 } = require("vec3");
 
@@ -42,25 +43,25 @@ class Player {
     }
 
     async getPosition(round = false) {
-        return (await JSONSender.queryTarget(this.client.socket, this.username))[round ? "roundedPosition" : "position"];
+        return (await JSONSender.queryTarget(this.client, this.username))[round ? "roundedPosition" : "position"];
     }
 
     async getYRotation() {
-        var data = (await JSONSender.queryTarget(this.client.socket, this.username))
+        var data = (await JSONSender.queryTarget(this.client, this.username))
         return data.yRot;
     }
 
     async getRotation() {
-        var data = (await JSONSender.queryTarget(this.client.socket, this.username, true))
+        var data = (await JSONSender.queryTarget(this.client, this.username, true))
         return new Vec3(data.xRot, data.yRot, 0);
     }
 
     async getLookVector() {
-        return (await JSONSender.queryTarget(this.client.socket, this.username, true)).lookVector;
+        return (await JSONSender.queryTarget(this.client, this.username, true)).lookVector;
     }
 
     async getTransform() {
-        var data = (await JSONSender.queryTarget(this.client.socket, this.username, true));
+        var data = (await JSONSender.queryTarget(this.client, this.username, true));
         
         return {
             position: data.position,
@@ -71,7 +72,7 @@ class Player {
 
     async raycast(range, precision = 0.2) {
         var transform = await this.getTransform();
-        return await JSONSender.raycastBlock(this.client.socket, transform.position.offset(0, 1.6200103759765625, 0), transform.lookVector, range, precision);
+        return await JSONSender.raycastBlock(this.client, transform.position.offset(0, 1.6200103759765625, 0), transform.lookVector, range, precision);
     }
 
     async isInArea(min, max) {

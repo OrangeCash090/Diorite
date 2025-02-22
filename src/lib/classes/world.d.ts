@@ -35,13 +35,27 @@ declare class WorldHandler {
     * @returns {Promise<Array>} - An array of blocks and coordinates.
     */
     getArea(start: Vec3, end: Vec3): Promise<any[]>;
-    fill(start: any, end: any, block: any, replace: any): void;
-    raycast(origin: any, direction: any, range: any): Promise<any>;
     /**
-    * Builds a structure from a file.
+    * Fills the specified area from start to end with the given block and what blocks to replace.
+    * @param {Vec3} start - The starting position.
+    * @param {Vec3} end - The ending position.
+    * @param {string} block - The block to fill with.
+    * @param {string} replace - The block to replace.
+    */
+    fill(start: Vec3, end: Vec3, block: string, replace: string): void;
+    /**
+    * Casts a ray from the origin in the specified direction and returns the first block that is not air.
+    * @param {Vec3} origin - The starting position.
+    * @param {Vec3} direction - The direction of the ray.
+    * @param {number} range - The length of the ray in blocks.
+    * @param {number} precision - How many blocks the ray steps per check.
+    */
+    raycast(origin: Vec3, direction: Vec3, range: number, precision: number): Promise<any>;
+    /**
+    * Builds a structure from a file. Supports nbt, schem, schematic, and mcstructure.
     * @param {string} path - The path to the file.
     */
-    buildStructure(path: string): Promise<void>;
+    buildStructure(path: string): void;
 }
 declare namespace WorldHandler {
     export { Client };

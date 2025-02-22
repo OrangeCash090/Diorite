@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
 * @typedef {import("./client")} Client
 */
@@ -25,16 +26,11 @@ class EventHandler {
                 var parsedMsg = JSON.parse(msg);
                 
                 var reqID = parsedMsg.header.requestId;
-                var resolver = this.client.socket.responseResolvers.get(reqID);
+                var resolver = this.client.responseResolvers.get(reqID);
 
                 if (resolver) {
-                    if (parsedMsg.header.messagePurpose == "error") {
-                        console.log(`Command dropped: ${resolver.cmd}`);
-                        resolver.reject(parsedMsg);
-                    }
-
                     resolver.resolve(parsedMsg);
-                    this.client.socket.responseResolvers.delete(reqID);
+                    this.client.responseResolvers.delete(reqID);
                 }
 
                 if (parsedMsg.header.eventName == "PlayerMessage" && parsedMsg.body.sender != "External") {

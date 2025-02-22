@@ -1,3 +1,4 @@
+// @ts-nocheck
 const JSONSender = require("../utils/JSONSender");
 const { Vec3 } = require("vec3");
 const fs = require("fs");
@@ -39,7 +40,7 @@ class WorldHandler {
     * @returns {Promise<string>} - The block at that position.
     */
     async getBlock(pos) {
-        return await JSONSender.getBlock(this.client.socket, pos);
+        return await JSONSender.getBlock(this.client, pos);
     }
 
     /**
@@ -49,9 +50,16 @@ class WorldHandler {
     * @returns {Promise<Array>} - An array of blocks and coordinates.
     */
     async getArea(start, end) {
-        return await JSONSender.getArea(this.client.socket, start, end);
+        return await JSONSender.getArea(this.client, start, end);
     }
 
+    /**
+    * Fills the specified area from start to end with the given block and what blocks to replace.
+    * @param {Vec3} start - The starting position.
+    * @param {Vec3} end - The ending position.
+    * @param {string} block - The block to fill with.
+    * @param {string} replace - The block to replace.
+    */
     fill(start, end, block, replace) {
         function getNextCoord(current, end, iterator) {
             if (iterator > 0) {
@@ -89,15 +97,22 @@ class WorldHandler {
         }
     }
 
-    async raycast(origin, direction, range) {
-        return await JSONSender.raycastBlock(this.client.socket, origin, direction, range);
+    /**
+    * Casts a ray from the origin in the specified direction and returns the first block that is not air.
+    * @param {Vec3} origin - The starting position.
+    * @param {Vec3} direction - The direction of the ray.
+    * @param {number} range - The length of the ray in blocks.
+    * @param {number} precision - How many blocks the ray steps per check.
+    */
+    async raycast(origin, direction, range, precision) {
+        return await JSONSender.raycastBlock(this.client, origin, direction, range, precision);
     }
 
     /**
-    * Builds a structure from a file.
+    * Builds a structure from a file. Supports nbt, schem, schematic, and mcstructure.
     * @param {string} path - The path to the file.
     */
-    async buildStructure(path) {
+    buildStructure(path) {
         var extension = null;
 
         if (path.includes("schem") || path.includes("schematic")) {
@@ -109,7 +124,7 @@ class WorldHandler {
         }
 
         fs.readFile(path, (err, data) => {
-            JSONSender.loadStructure(this.client.socket, data, extension);
+            JSONSender.loadStructure(this.client, data, extension);
         })
     }
 }
