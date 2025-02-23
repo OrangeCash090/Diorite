@@ -18,8 +18,7 @@ A websocket API for Minecraft Bedrock Edition designed for easy use and enabling
 ## Installation
 `npm install diorite`
 
-To update Diorite to the latest version and the Node.js dependencies of the package, run\
-`npm update`
+To update Diorite to the latest version and the Node.js dependencies of the package, run `npm install diorite@latest`
 
 ## Usage
 tbd
